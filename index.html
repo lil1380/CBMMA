@@ -1,0 +1,724 @@
+<!--
+  Sala de Estudos — Painel de Prontidão (CBM-MA)
+  Coworking de estudos compartilhado por link. Sem chat.
+  Dados coletivos via window.storage (shared=true).
+-->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<style>
+  :root{
+    --bg:#141a1f;
+    --panel:#1b232b;
+    --panel-2:#212c35;
+    --raise:#26333d;
+    --line:#2e3b46;
+    --line-soft:#26313a;
+    --ink:#eef3f6;
+    --muted:#8a97a3;
+    --faint:#6b7681;
+    --red:#d8232f;
+    --red-deep:#a81722;
+    --amber:#f2a736;
+    --green:#3bb27f;
+    --blue:#5aa9d6;
+    --shadow:0 1px 0 rgba(255,255,255,.03), 0 10px 30px rgba(0,0,0,.35);
+    --r:10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"IBM Plex Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body{min-height:100vh}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 18px 60px}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  button{font-family:inherit;cursor:pointer}
+  button:focus-visible, input:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+  /* ---------- Header / Painel de Prontidão ---------- */
+  header.board-head{
+    position:relative;background:linear-gradient(180deg,var(--panel-2),var(--panel));
+    border:1px solid var(--line);border-radius:var(--r);overflow:hidden;
+    box-shadow:var(--shadow);margin-bottom:18px}
+  header.board-head::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;
+    background:linear-gradient(180deg,var(--red),var(--red-deep))}
+  .head-inner{display:flex;flex-wrap:wrap;align-items:center;gap:16px 26px;padding:16px 20px 16px 24px}
+  .brand{display:flex;align-items:center;gap:13px;min-width:0}
+  .badge{width:42px;height:42px;flex:0 0 42px;border-radius:8px;
+    background:radial-gradient(circle at 30% 25%,#e7414c,var(--red-deep));
+    display:grid;place-items:center;box-shadow:inset 0 0 0 2px rgba(255,255,255,.14)}
+  .badge svg{width:24px;height:24px}
+  .brand h1{font-family:"Oswald";font-weight:700;font-size:21px;line-height:1;margin:0;
+    letter-spacing:.045em;text-transform:uppercase}
+  .brand .sub{font-size:11.5px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:5px}
+  .brand .sala{color:var(--ink)}
+
+  .head-metrics{display:flex;gap:12px;margin-left:auto;flex-wrap:wrap}
+  .metric{background:var(--panel);border:1px solid var(--line);border-radius:9px;
+    padding:9px 15px;min-width:104px;text-align:center}
+  .metric .k{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+  .metric .v{font-family:"IBM Plex Mono";font-weight:600;font-size:22px;line-height:1.15;margin-top:3px}
+  .metric.count-red .v{color:var(--red)}
+  .metric.count-live .v{color:var(--green)}
+  .metric .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);
+    margin-right:6px;vertical-align:middle;box-shadow:0 0 0 3px rgba(59,178,127,.16)}
+  .metric.count-live.empty .dot{background:var(--faint);box-shadow:none}
+  .gear{background:transparent;border:1px solid var(--line);color:var(--muted);
+    border-radius:8px;width:38px;height:38px;font-size:16px;display:grid;place-items:center}
+  .gear:hover{color:var(--ink);border-color:var(--faint)}
+
+  /* presence strip */
+  .presence{display:flex;align-items:center;gap:8px;padding:9px 20px 12px 24px;
+    border-top:1px solid var(--line-soft);flex-wrap:wrap}
+  .presence .lbl{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin-right:2px}
+  .chip-who{display:inline-flex;align-items:center;gap:6px;background:var(--raise);
+    border:1px solid var(--line);border-radius:20px;padding:4px 11px 4px 8px;font-size:12.5px}
+  .chip-who .av{width:19px;height:19px;border-radius:50%;display:grid;place-items:center;
+    font-size:10px;font-weight:600;color:#0d1116;font-family:"IBM Plex Mono"}
+  .chip-who.me{border-color:var(--green)}
+  .presence .none{font-size:12.5px;color:var(--faint);font-style:italic}
+
+  /* ---------- Progress ---------- */
+  .progress-row{display:flex;align-items:center;gap:14px;margin:0 0 20px;flex-wrap:wrap}
+  .bar{flex:1;min-width:220px;height:10px;background:var(--panel);border:1px solid var(--line);
+    border-radius:20px;overflow:hidden}
+  .bar > i{display:block;height:100%;width:0;border-radius:20px;
+    background:linear-gradient(90deg,var(--green),#59c795);transition:width .5s ease}
+  .progress-row .txt{font-family:"IBM Plex Mono";font-size:13px;color:var(--muted)}
+  .progress-row .txt b{color:var(--ink)}
+
+  /* ---------- Toolbar ---------- */
+  .toolbar{display:flex;gap:12px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+  .add-btn{display:inline-flex;align-items:center;gap:8px;background:var(--red);
+    color:#fff;border:none;border-radius:9px;padding:11px 16px;font-weight:600;font-size:14px;
+    box-shadow:0 6px 18px rgba(216,35,47,.28)}
+  .add-btn:hover{background:#e4343f}
+  .add-btn svg{width:15px;height:15px}
+  .filters{display:flex;gap:7px;flex-wrap:wrap}
+  .fchip{background:var(--panel);border:1px solid var(--line);color:var(--muted);
+    border-radius:20px;padding:6px 13px;font-size:12.5px}
+  .fchip:hover{color:var(--ink)}
+  .fchip.on{background:var(--raise);color:var(--ink);border-color:var(--faint)}
+
+  /* ---------- Board ---------- */
+  .board{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .col{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+    display:flex;flex-direction:column;min-height:200px}
+  .col-head{display:flex;align-items:center;gap:10px;padding:13px 15px;
+    border-bottom:1px solid var(--line-soft)}
+  .col-head .tab{width:4px;height:20px;border-radius:3px}
+  .col-head h2{font-family:"Oswald";font-weight:600;text-transform:uppercase;letter-spacing:.07em;
+    font-size:14.5px;margin:0}
+  .col-head .n{margin-left:auto;font-family:"IBM Plex Mono";font-size:13px;color:var(--muted);
+    background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:1px 9px}
+  .col.todo  .tab{background:var(--blue)}
+  .col.doing .tab{background:var(--amber)}
+  .col.done  .tab{background:var(--green)}
+  .col-body{padding:12px;display:flex;flex-direction:column;gap:10px;flex:1}
+
+  .card{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:11px 12px;
+    box-shadow:0 1px 0 rgba(0,0,0,.2)}
+  .card .area{display:inline-block;font-family:"IBM Plex Mono";font-size:10px;letter-spacing:.05em;
+    text-transform:uppercase;color:var(--faint);border:1px solid var(--line);border-radius:5px;
+    padding:2px 7px;margin-bottom:8px}
+  .card .subj{font-size:14.5px;line-height:1.35;font-weight:500}
+  .card.done .subj{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+  .card .who{font-size:11.5px;color:var(--faint);margin-top:7px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .card .who .act{color:var(--amber)}
+  .card.done .who .act{color:var(--green)}
+  .card-actions{display:flex;gap:7px;margin-top:11px;flex-wrap:wrap}
+  .act-btn{background:var(--raise);border:1px solid var(--line);color:var(--ink);
+    border-radius:7px;padding:6px 11px;font-size:12.5px;font-weight:500}
+  .act-btn:hover{border-color:var(--faint)}
+  .act-btn.go{background:rgba(59,178,127,.14);border-color:rgba(59,178,127,.4);color:#7bd6ab}
+  .act-btn.go:hover{background:rgba(59,178,127,.22)}
+  .act-btn.pick{background:rgba(242,167,54,.14);border-color:rgba(242,167,54,.4);color:#f2c072}
+  .act-btn.pick:hover{background:rgba(242,167,54,.22)}
+  .act-btn.del{margin-left:auto;color:var(--faint);background:transparent;border-color:transparent}
+  .act-btn.del:hover{color:var(--red);background:rgba(216,35,47,.1)}
+  .empty{color:var(--faint);font-size:13px;font-style:italic;text-align:center;padding:26px 10px;line-height:1.5}
+
+  /* ---------- Pomodoro (personal) ---------- */
+  .pomo{position:fixed;right:16px;bottom:16px;z-index:40;background:var(--panel-2);
+    border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);
+    padding:12px 14px;display:flex;align-items:center;gap:14px;min-width:210px}
+  .pomo .time{font-family:"IBM Plex Mono";font-weight:600;font-size:26px;letter-spacing:.02em}
+  .pomo.break .time{color:var(--green)}
+  .pomo .pmeta{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
+  .pomo .pbtns{display:flex;gap:6px;margin-left:auto}
+  .pbtn{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--raise);
+    color:var(--ink);display:grid;place-items:center;font-size:14px}
+  .pbtn:hover{border-color:var(--faint)}
+  .pbtn.play{background:var(--red);border-color:var(--red);color:#fff}
+  .pbtn.play:hover{background:#e4343f}
+  .pomo .cyc{font-family:"IBM Plex Mono";font-size:11px;color:var(--muted)}
+
+  /* ---------- Overlays / modals ---------- */
+  .veil{position:fixed;inset:0;background:rgba(8,11,14,.72);backdrop-filter:blur(3px);
+    z-index:60;display:grid;place-items:center;padding:20px}
+  .veil[hidden]{display:none}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    width:100%;max-width:420px;padding:24px;box-shadow:var(--shadow)}
+  .modal h3{font-family:"Oswald";font-weight:600;text-transform:uppercase;letter-spacing:.05em;
+    font-size:19px;margin:0 0 5px}
+  .modal p{color:var(--muted);font-size:13.5px;line-height:1.5;margin:0 0 18px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--faint);margin-bottom:6px}
+  .field input, .field select{width:100%;background:var(--bg);border:1px solid var(--line);
+    color:var(--ink);border-radius:8px;padding:11px 12px;font-size:14px;font-family:inherit}
+  .field input::placeholder{color:var(--faint)}
+  .modal-actions{display:flex;gap:10px;margin-top:6px}
+  .btn-primary{flex:1;background:var(--red);color:#fff;border:none;border-radius:8px;
+    padding:12px;font-weight:600;font-size:14px}
+  .btn-primary:hover{background:#e4343f}
+  .btn-ghost{background:transparent;border:1px solid var(--line);color:var(--muted);
+    border-radius:8px;padding:12px 16px;font-size:14px}
+  .btn-ghost:hover{color:var(--ink);border-color:var(--faint)}
+  .rule{font-size:11.5px;color:var(--faint);margin-top:14px;line-height:1.5;
+    border-top:1px solid var(--line-soft);padding-top:12px}
+
+  /* ---------- Toast ---------- */
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;z-index:80;
+    background:var(--raise);border:1px solid var(--line);border-radius:9px;padding:11px 16px;
+    font-size:13.5px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:opacity .25s, transform .25s}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  footer.note{margin-top:26px;text-align:center;color:var(--faint);font-size:11.5px;letter-spacing:.03em}
+  footer.note b{color:var(--muted)}
+
+  @media (max-width:860px){
+    .board{grid-template-columns:1fr}
+    .head-metrics{margin-left:0;width:100%}
+    .metric{flex:1;min-width:0}
+    .pomo{left:16px;right:16px;bottom:12px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="wrap">
+  <!-- ===== Painel de Prontidão ===== -->
+  <header class="board-head">
+    <div class="head-inner">
+      <div class="brand">
+        <div class="badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2s5 4.2 5 9.4c0 1.2-.4 2.2-1 3 .1-1.6-.6-2.9-1.6-3.7.3 2.2-.9 3.4-2 4.4-.9.8-1.6 1.7-1.6 3 0 .3 0 .6.1.9C8.7 21.4 7 19.2 7 16.4c0-1.6.7-2.9 1.6-4-.1.9.2 1.7.8 2.2-.4-2.4.9-4.6 2.6-6-.2 1 .2 1.9.9 2.4C13.7 8.6 13 6.9 12 6c.5-1.6.4-3-.1-4 .1 0 .1 0 .2 0z"/></svg>
+        </div>
+        <div>
+          <h1>Painel de Prontidão</h1>
+          <div class="sub"><span class="sala" id="salaName">Sala CBM-MA</span> · Soldado Combatente</div>
+        </div>
+      </div>
+
+      <div class="head-metrics">
+        <div class="metric count-red">
+          <div class="k">Faltam</div>
+          <div class="v" id="dDays">—</div>
+        </div>
+        <div class="metric">
+          <div class="k">Estudando agora</div>
+          <div class="v" id="mDoing">0</div>
+        </div>
+        <div class="metric count-live empty" id="liveMetric">
+          <div class="k">Em prontidão</div>
+          <div class="v"><span class="dot"></span><span id="mLive">0</span></div>
+        </div>
+        <button class="gear" id="btnSettings" title="Ajustes da sala" aria-label="Ajustes da sala">⚙</button>
+      </div>
+    </div>
+    <div class="presence" id="presence">
+      <span class="lbl">Na sala:</span>
+      <span class="none">carregando…</span>
+    </div>
+  </header>
+
+  <!-- ===== Progresso ===== -->
+  <div class="progress-row">
+    <div class="bar"><i id="progFill"></i></div>
+    <div class="txt"><b id="progDone">0</b> de <b id="progTotal">0</b> assuntos concluídos</div>
+  </div>
+
+  <!-- ===== Toolbar ===== -->
+  <div class="toolbar">
+    <button class="add-btn" id="btnAdd">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Novo assunto
+    </button>
+    <div class="filters" id="filters"></div>
+  </div>
+
+  <!-- ===== Quadro ===== -->
+  <div class="board">
+    <section class="col todo">
+      <div class="col-head"><span class="tab"></span><h2>A estudar</h2><span class="n" id="nTodo">0</span></div>
+      <div class="col-body" id="colTodo"></div>
+    </section>
+    <section class="col doing">
+      <div class="col-head"><span class="tab"></span><h2>Estudando agora</h2><span class="n" id="nDoing">0</span></div>
+      <div class="col-body" id="colDoing"></div>
+    </section>
+    <section class="col done">
+      <div class="col-head"><span class="tab"></span><h2>Concluído</h2><span class="n" id="nDone">0</span></div>
+      <div class="col-body" id="colDone"></div>
+    </section>
+  </div>
+
+  <footer class="note">
+    Este é um espaço de foco — <b>sem chat</b>. Cada um adiciona seus assuntos; qualquer pessoa pode mover cartões pelo quadro. Você só apaga o que você mesmo criou.
+  </footer>
+</div>
+
+<!-- Pomodoro pessoal -->
+<div class="pomo" id="pomo">
+  <div>
+    <div class="time" id="pomoTime">25:00</div>
+    <div class="pmeta" id="pomoMeta">Foco</div>
+  </div>
+  <div class="pbtns">
+    <button class="pbtn play" id="pomoToggle" aria-label="Iniciar/pausar">▶</button>
+    <button class="pbtn" id="pomoReset" aria-label="Reiniciar">↺</button>
+  </div>
+  <div class="cyc" id="pomoCyc" title="Ciclos de foco concluídos">×0</div>
+</div>
+
+<!-- Entrada: nome -->
+<div class="veil" id="gate">
+  <div class="modal">
+    <h3>Entrar na sala</h3>
+    <p>Escolha um nome pra aparecer no painel de prontidão. Sem cadastro, sem senha — é só pra galera saber quem está estudando junto.</p>
+    <div class="field">
+      <label for="nameInput">Como quer ser chamado(a)?</label>
+      <input id="nameInput" maxlength="22" placeholder="ex: Lílian, Recruta 07, Aspirante…" autocomplete="off" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" id="enterBtn">Entrar na prontidão</button>
+    </div>
+    <div class="rule">Não há mensagens ou chat aqui. As únicas ações são adicionar assuntos e movê-los entre <b>A estudar → Estudando → Concluído</b>.</div>
+  </div>
+</div>
+
+<!-- Novo assunto -->
+<div class="veil" id="addModal" hidden>
+  <div class="modal">
+    <h3>Novo assunto</h3>
+    <p>Adicione um tópico à fila de estudos da sala.</p>
+    <div class="field">
+      <label for="subjInput">Assunto</label>
+      <input id="subjInput" maxlength="90" placeholder="ex: Concordância verbal" autocomplete="off" />
+    </div>
+    <div class="field">
+      <label for="areaInput">Matéria</label>
+      <input id="areaInput" list="areaList" maxlength="40" placeholder="ex: Língua Portuguesa" autocomplete="off" />
+      <datalist id="areaList"></datalist>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" id="saveAdd">Adicionar à fila</button>
+      <button class="btn-ghost" id="cancelAdd">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ajustes -->
+<div class="veil" id="setModal" hidden>
+  <div class="modal">
+    <h3>Ajustes da sala</h3>
+    <p>Isto vale para todo mundo na sala.</p>
+    <div class="field">
+      <label for="setSala">Nome da sala</label>
+      <input id="setSala" maxlength="34" autocomplete="off" />
+    </div>
+    <div class="field">
+      <label for="setDate">Data da prova</label>
+      <input id="setDate" type="date" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" id="saveSet">Salvar</button>
+      <button class="btn-ghost" id="cancelSet">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- storage helpers ---------------- */
+  async function sget(key, shared){
+    try{ const r = await window.storage.get(key, shared); return r ? r.value : null; }
+    catch(e){ return null; }
+  }
+  async function sset(key, val, shared){
+    try{ return await window.storage.set(key, val, shared); }
+    catch(e){ console.error("set fail", key, e); return null; }
+  }
+  async function slist(prefix, shared){
+    try{ const r = await window.storage.list(prefix, shared); return (r && r.keys) ? r.keys : []; }
+    catch(e){ return []; }
+  }
+  async function sdel(key, shared){ try{ await window.storage.delete(key, shared); }catch(e){} }
+
+  const KEY_CARDS='board:cards', KEY_CFG='board:config', KEY_SEED='board:seeded';
+  const uid = (p)=> (p||'')+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+  /* ---------------- state ---------------- */
+  const state = { me:null, cards:[], cfg:{sala:'Sala CBM-MA', date:'2026-10-18'}, filter:'all' };
+
+  /* ---------------- seed data (CBM-MA) ---------------- */
+  const SEED = [
+    ["Língua Portuguesa", ["Interpretação de texto","Ortografia e acentuação","Classes de palavras","Concordância verbal e nominal","Regência verbal e nominal","Crase","Pontuação","Figuras de linguagem","Semântica e sinônimos","Coesão e coerência"]],
+    ["Matemática", ["Conjuntos numéricos","Razão e proporção","Regra de três","Porcentagem","Juros simples e compostos","Equações do 1º e 2º grau","Geometria plana","Sistema métrico decimal","Probabilidade"]],
+    ["Raciocínio Lógico", ["Proposições e conectivos","Tabelas-verdade","Argumentos e validade","Sequências lógicas","Diagramas lógicos"]],
+    ["História e Geografia do MA", ["Formação histórica do Maranhão","Adesão à Independência (28 de julho)","Economia maranhense","Aspectos físicos e clima","Hidrografia e vegetação","Capital e municípios"]],
+    ["Atualidades", ["Atualidades nacionais","Atualidades do Maranhão","Meio ambiente","Cidadania e sociedade"]],
+    ["Informática", ["Windows","Editor de textos (Word)","Planilhas (Excel)","Internet e navegadores","Segurança da informação"]],
+    ["Legislação / Direito", ["CF: princípios fundamentais","Direitos e garantias individuais","Segurança pública (art. 144)","Direitos Humanos"]],
+    ["Inglês", ["Interpretação de texto","Vocabulário","Tempos verbais","Cognatos e falsos cognatos"]]
+  ];
+  function buildSeed(sysId, sysName){
+    const now=Date.now(); const out=[]; let i=0;
+    SEED.forEach(([area, topics])=> topics.forEach(t=>{
+      out.push({id:uid('c'), subject:t, area, status:'todo',
+        ownerId:sysId, ownerName:sysName, activeName:null,
+        createdAt: now+(i++), movedAt:now});
+    }));
+    return out;
+  }
+
+  /* ---------------- init ---------------- */
+  async function init(){
+    // personal identity
+    const meRaw = await sget('me', false);
+    if(meRaw){ try{ state.me = JSON.parse(meRaw); }catch(e){} }
+    if(state.me && state.me.name){ document.getElementById('gate').hidden = true; }
+    else { document.getElementById('gate').hidden = false; }
+
+    await loadConfig();
+    await ensureSeed();
+    await refresh();          // first data pull
+    startLoops();
+    wireUI();
+    initPomodoro();
+  }
+
+  async function loadConfig(){
+    const raw = await sget(KEY_CFG, true);
+    if(raw){ try{ Object.assign(state.cfg, JSON.parse(raw)); }catch(e){} }
+    applyConfig();
+  }
+  function applyConfig(){
+    document.getElementById('salaName').textContent = state.cfg.sala || 'Sala CBM-MA';
+    renderCountdown();
+  }
+
+  async function ensureSeed(){
+    const seeded = await sget(KEY_SEED, true);
+    const existing = await sget(KEY_CARDS, true);
+    if(seeded || existing) return;
+    await sset(KEY_SEED, '1', true);
+    const cards = buildSeed('system', 'Sala');
+    await sset(KEY_CARDS, JSON.stringify(cards), true);
+  }
+
+  /* ---------------- data refresh ---------------- */
+  async function refresh(){
+    const raw = await sget(KEY_CARDS, true);
+    if(raw){ try{ state.cards = JSON.parse(raw) || []; }catch(e){ state.cards=[]; } }
+    render();
+    await refreshPresence();
+  }
+
+  async function mutateCards(mutator){
+    // re-fetch latest to reduce clobber, mutate, write back
+    const raw = await sget(KEY_CARDS, true);
+    let cards = [];
+    if(raw){ try{ cards = JSON.parse(raw)||[]; }catch(e){} }
+    const next = mutator(cards) || cards;
+    state.cards = next;
+    render();
+    await sset(KEY_CARDS, JSON.stringify(next), true);
+  }
+
+  /* ---------------- rendering ---------------- */
+  const el = (id)=>document.getElementById(id);
+  const esc = (s)=> (s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const avColor = (name)=>{ let h=0; for(const ch of (name||'?')) h=(h*31+ch.charCodeAt(0))>>>0;
+    const hue=h%360; return `hsl(${hue} 62% 62%)`; };
+  const initials = (n)=> (n||'?').trim().slice(0,2).toUpperCase();
+
+  function render(){
+    const cards = state.cards;
+    // areas + filters
+    renderFilters(cards);
+    const shown = state.filter==='all' ? cards : cards.filter(c=>c.area===state.filter);
+
+    const byStatus = {todo:[],doing:[],done:[]};
+    shown.forEach(c=> (byStatus[c.status]||byStatus.todo).push(c));
+    byStatus.todo.sort((a,b)=>a.createdAt-b.createdAt);
+    byStatus.doing.sort((a,b)=>b.movedAt-a.movedAt);
+    byStatus.done.sort((a,b)=>b.movedAt-a.movedAt);
+
+    el('colTodo').innerHTML  = byStatus.todo.length  ? byStatus.todo.map(cardHTML).join('')  : emptyHTML('Fila vazia. Adicione o próximo assunto.');
+    el('colDoing').innerHTML = byStatus.doing.length ? byStatus.doing.map(cardHTML).join('') : emptyHTML('Ninguém estudando agora. Pegue um assunto da fila.');
+    el('colDone').innerHTML  = byStatus.done.length  ? byStatus.done.map(cardHTML).join('')  : emptyHTML('Nada concluído ainda. Bora começar?');
+
+    el('nTodo').textContent = byStatus.todo.length;
+    el('nDoing').textContent= byStatus.doing.length;
+    el('nDone').textContent = byStatus.done.length;
+
+    // metrics + progress (over full board, not filtered)
+    const total = cards.length;
+    const done = cards.filter(c=>c.status==='done').length;
+    const doing = cards.filter(c=>c.status==='doing').length;
+    el('mDoing').textContent = doing;
+    el('progDone').textContent = done;
+    el('progTotal').textContent = total;
+    el('progFill').style.width = total ? (done/total*100)+'%' : '0%';
+
+    bindCardButtons();
+    // datalist
+    const areas=[...new Set(cards.map(c=>c.area).filter(Boolean))].sort();
+    el('areaList').innerHTML = areas.map(a=>`<option value="${esc(a)}">`).join('');
+  }
+
+  function cardHTML(c){
+    const mine = state.me && c.ownerId===state.me.userId;
+    let who='';
+    if(c.status==='todo'){
+      who = `criado por ${esc(c.ownerName||'—')}`;
+    }else if(c.status==='doing'){
+      who = `<span class="act">▸ ${esc(c.activeName||c.ownerName||'—')}</span> estudando`;
+    }else{
+      who = `<span class="act">✓</span> concluído por ${esc(c.activeName||c.ownerName||'—')}`;
+    }
+    let actions='';
+    if(c.status==='todo'){
+      actions += `<button class="act-btn pick" data-move="doing" data-id="${c.id}">Pegar p/ estudar</button>`;
+    }else if(c.status==='doing'){
+      actions += `<button class="act-btn go" data-move="done" data-id="${c.id}">Concluí ✓</button>`;
+      actions += `<button class="act-btn" data-move="todo" data-id="${c.id}">Devolver</button>`;
+    }else{
+      actions += `<button class="act-btn" data-move="doing" data-id="${c.id}">Reabrir</button>`;
+    }
+    if(mine) actions += `<button class="act-btn del" data-del="${c.id}" title="Apagar (seu assunto)">Apagar</button>`;
+
+    return `<div class="card ${c.status}">
+      ${c.area?`<span class="area">${esc(c.area)}</span>`:''}
+      <div class="subj">${esc(c.subject)}</div>
+      <div class="who">${who}</div>
+      <div class="card-actions">${actions}</div>
+    </div>`;
+  }
+  function emptyHTML(msg){ return `<div class="empty">${esc(msg)}</div>`; }
+
+  function bindCardButtons(){
+    document.querySelectorAll('[data-move]').forEach(b=>{
+      b.onclick = ()=> moveCard(b.getAttribute('data-id'), b.getAttribute('data-move'));
+    });
+    document.querySelectorAll('[data-del]').forEach(b=>{
+      b.onclick = ()=> deleteCard(b.getAttribute('data-del'));
+    });
+  }
+
+  function renderFilters(cards){
+    const areas=[...new Set(cards.map(c=>c.area).filter(Boolean))].sort();
+    const wrap=el('filters');
+    const mk=(val,label)=>`<button class="fchip ${state.filter===val?'on':''}" data-f="${esc(val)}">${esc(label)}</button>`;
+    wrap.innerHTML = mk('all','Todas') + areas.map(a=>mk(a,a)).join('');
+    wrap.querySelectorAll('[data-f]').forEach(b=>{
+      b.onclick=()=>{ state.filter=b.getAttribute('data-f'); render(); };
+    });
+  }
+
+  /* ---------------- actions ---------------- */
+  async function moveCard(id, to){
+    await mutateCards(cards=>{
+      const c=cards.find(x=>x.id===id); if(!c) return cards;
+      c.status=to; c.movedAt=Date.now();
+      if(to==='doing' || to==='done'){ c.activeName = state.me?state.me.name:c.activeName; }
+      if(to==='todo'){ c.activeName=null; }
+      return cards;
+    });
+    if(to==='done') toast('Assunto concluído — mandou bem! 🎯');
+    if(to==='doing') toast('Bom estudo! Foco total. 🔥');
+  }
+
+  async function deleteCard(id){
+    const c=state.cards.find(x=>x.id===id);
+    if(!c) return;
+    if(!state.me || c.ownerId!==state.me.userId){ toast('Você só pode apagar assuntos que você criou.'); return; }
+    if(!confirm(`Apagar "${c.subject}"? Isso remove o assunto para todos.`)) return;
+    await mutateCards(cards=> cards.filter(x=>x.id!==id));
+    toast('Assunto removido.');
+  }
+
+  async function addCard(subject, area){
+    const card={id:uid('c'), subject, area:area||'Geral', status:'todo',
+      ownerId:state.me.userId, ownerName:state.me.name, activeName:null,
+      createdAt:Date.now(), movedAt:Date.now()};
+    await mutateCards(cards=>{ cards.push(card); return cards; });
+    toast('Assunto adicionado à fila.');
+  }
+
+  /* ---------------- presence ---------------- */
+  async function heartbeat(){
+    if(!state.me) return;
+    await sset('presence:'+state.me.userId, JSON.stringify({name:state.me.name, at:Date.now()}), true);
+  }
+  async function refreshPresence(){
+    const keys = await slist('presence:', true);
+    const now=Date.now(); const live=[];
+    for(const k of keys){
+      const raw= await sget(k, true);
+      if(!raw) continue;
+      let p; try{ p=JSON.parse(raw); }catch(e){ continue; }
+      if(now - (p.at||0) < 60000) live.push({key:k, name:p.name, at:p.at});
+      else if(state.me && k==='presence:'+state.me.userId){ /* keep own */ }
+      else if(now - (p.at||0) > 15*60000){ sdel(k, true); } // tidy very stale
+    }
+    live.sort((a,b)=> a.name.localeCompare(b.name));
+    renderPresence(live);
+  }
+  function renderPresence(live){
+    const wrap=el('presence');
+    let html='<span class="lbl">Na sala:</span>';
+    if(!live.length){ html+='<span class="none">só você por enquanto…</span>'; }
+    else{
+      html += live.map(p=>{
+        const me = state.me && p.name===state.me.name;
+        return `<span class="chip-who ${me?'me':''}">
+          <span class="av" style="background:${avColor(p.name)}">${esc(initials(p.name))}</span>${esc(p.name)}</span>`;
+      }).join('');
+    }
+    wrap.innerHTML=html;
+    const n=live.length;
+    el('mLive').textContent=n;
+    el('liveMetric').classList.toggle('empty', n===0);
+  }
+
+  /* ---------------- countdown ---------------- */
+  function renderCountdown(){
+    const d=el('dDays');
+    const target=state.cfg.date;
+    if(!target){ d.textContent='—'; return; }
+    const t=new Date(target+'T00:00:00');
+    const now=new Date(); now.setHours(0,0,0,0);
+    const days=Math.round((t-now)/86400000);
+    if(isNaN(days)){ d.textContent='—'; }
+    else if(days>1){ d.innerHTML=days+'<span style="font-size:12px;color:var(--faint)"> dias</span>'; }
+    else if(days===1){ d.innerHTML='1<span style="font-size:12px;color:var(--faint)"> dia</span>'; }
+    else if(days===0){ d.textContent='HOJE'; }
+    else{ d.innerHTML='<span style="font-size:14px;color:var(--faint)">prova passou</span>'; }
+  }
+
+  /* ---------------- loops ---------------- */
+  function startLoops(){
+    heartbeat();
+    setInterval(refresh, 8000);        // board + presence
+    setInterval(heartbeat, 20000);     // keep-alive
+    setInterval(renderCountdown, 3600000);
+    window.addEventListener('beforeunload', ()=>{
+      if(state.me) navigator.sendBeacon && sdel('presence:'+state.me.userId, true);
+    });
+  }
+
+  /* ---------------- UI wiring ---------------- */
+  function wireUI(){
+    // gate
+    const enter=()=>{
+      const v=el('nameInput').value.trim();
+      if(!v){ el('nameInput').focus(); return; }
+      const userId = (state.me&&state.me.userId) || uid('u');
+      state.me={userId, name:v};
+      sset('me', JSON.stringify(state.me), false);
+      el('gate').hidden=true;
+      heartbeat(); refresh();
+    };
+    el('enterBtn').onclick=enter;
+    el('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') enter(); });
+    setTimeout(()=>{ if(!el('gate').hidden) el('nameInput').focus(); }, 200);
+
+    // add
+    el('btnAdd').onclick=()=>{ el('addModal').hidden=false; el('subjInput').value=''; el('areaInput').value=''; el('subjInput').focus(); };
+    el('cancelAdd').onclick=()=> el('addModal').hidden=true;
+    el('saveAdd').onclick=()=>{
+      const s=el('subjInput').value.trim(); if(!s){ el('subjInput').focus(); return; }
+      addCard(s, el('areaInput').value.trim());
+      el('addModal').hidden=true;
+    };
+    el('subjInput').addEventListener('keydown',e=>{ if(e.key==='Enter') el('areaInput').focus(); });
+
+    // settings
+    el('btnSettings').onclick=()=>{
+      el('setSala').value=state.cfg.sala||''; el('setDate').value=state.cfg.date||'';
+      el('setModal').hidden=false;
+    };
+    el('cancelSet').onclick=()=> el('setModal').hidden=true;
+    el('saveSet').onclick=async ()=>{
+      state.cfg.sala=el('setSala').value.trim()||'Sala CBM-MA';
+      state.cfg.date=el('setDate').value||state.cfg.date;
+      await sset(KEY_CFG, JSON.stringify(state.cfg), true);
+      applyConfig(); el('setModal').hidden=true; toast('Ajustes salvos para a sala.');
+    };
+
+    // close modal on veil click
+    document.querySelectorAll('.veil').forEach(v=>{
+      if(v.id==='gate') return;
+      v.addEventListener('click',e=>{ if(e.target===v) v.hidden=true; });
+    });
+  }
+
+  /* ---------------- pomodoro (personal) ---------------- */
+  function initPomodoro(){
+    let dur={focus:25*60, break:5*60};
+    let mode='focus', left=dur.focus, running=false, cycles=0, timer=null;
+    const time=el('pomoTime'), meta=el('pomoMeta'), toggle=el('pomoToggle'),
+          reset=el('pomoReset'), cyc=el('pomoCyc'), pomo=el('pomo');
+    // restore cycles
+    (async()=>{ const r=await sget('pomo:cycles', false); if(r){ cycles=parseInt(r)||0; cyc.textContent='×'+cycles; } })();
+
+    function paint(){
+      const m=String(Math.floor(left/60)).padStart(2,'0');
+      const s=String(left%60).padStart(2,'0');
+      time.textContent=`${m}:${s}`;
+      meta.textContent = mode==='focus'?'Foco':'Pausa';
+      pomo.classList.toggle('break', mode==='break');
+      toggle.textContent = running?'❚❚':'▶';
+      toggle.classList.toggle('play', !running);
+    }
+    function tick(){
+      left--;
+      if(left<0){
+        if(mode==='focus'){ cycles++; cyc.textContent='×'+cycles; sset('pomo:cycles', String(cycles), false);
+          mode='break'; left=dur.break; toast('Ciclo de foco concluído. Respira 5 min. ☕'); }
+        else { mode='focus'; left=dur.focus; toast('Pausa acabou. De volta ao foco! 🔥'); }
+      }
+      paint();
+    }
+    toggle.onclick=()=>{
+      running=!running;
+      if(running){ timer=setInterval(tick,1000); } else { clearInterval(timer); }
+      paint();
+    };
+    reset.onclick=()=>{ clearInterval(timer); running=false; mode='focus'; left=dur.focus; paint(); };
+    paint();
+  }
+
+  /* ---------------- toast ---------------- */
+  let toastT=null;
+  function toast(msg){
+    const t=el('toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'), 2600);
+  }
+
+  /* ---------------- go ---------------- */
+  if(window.storage){ init(); }
+  else {
+    document.querySelector('.wrap').insertAdjacentHTML('afterbegin',
+      '<div style="background:#2a1518;border:1px solid #d8232f;color:#ffbcc0;padding:14px;border-radius:10px;margin-bottom:16px;font-size:14px">Este painel precisa rodar dentro do Claude para salvar e compartilhar os dados da sala.</div>');
+  }
+})();
+</script>
