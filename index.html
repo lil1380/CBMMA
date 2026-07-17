@@ -25,6 +25,7 @@
     --amber:#f2a736;
     --green:#3bb27f;
     --blue:#5aa9d6;
+    --lilac:#a48ce0;
     --shadow:0 1px 0 rgba(255,255,255,.03), 0 10px 30px rgba(0,0,0,.35);
     --r:10px;
   }
@@ -80,6 +81,26 @@
   .chip-who.me{border-color:var(--green)}
   .presence .none{font-size:12.5px;color:var(--faint);font-style:italic}
 
+  /* ---------- Meu Progresso ---------- */
+  .mypanel{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-bottom:18px}
+  .mystats{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+  .mystats h3, .rank h3{font-family:"Oswald";font-weight:600;text-transform:uppercase;letter-spacing:.06em;
+    font-size:13px;margin:0 0 12px;color:var(--muted)}
+  .mystats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .mystat{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:8px;padding:9px 11px}
+  .mystat .k{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .mystat .v{font-family:"IBM Plex Mono";font-weight:600;font-size:18px;margin-top:2px}
+  .mystat.streak .v{color:var(--amber)}
+  .mystat.rev .v{color:var(--lilac)}
+  .rank{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+  .rank-row{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--line-soft);font-size:13px}
+  .rank-row:last-child{border-bottom:none}
+  .rank-row .pos{width:16px;flex:0 0 16px;color:var(--faint);font-family:"IBM Plex Mono";font-size:11.5px;text-align:center}
+  .rank-row .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rank-row.me .nm{color:var(--green);font-weight:600}
+  .rank-row .sc{font-family:"IBM Plex Mono";color:var(--muted);font-size:12px}
+  .rank .none{color:var(--faint);font-size:12.5px;font-style:italic}
+
   /* ---------- Progress ---------- */
   .progress-row{display:flex;align-items:center;gap:14px;margin:0 0 20px;flex-wrap:wrap}
   .bar{flex:1;min-width:220px;height:10px;background:var(--panel);border:1px solid var(--line);
@@ -103,7 +124,7 @@
   .fchip.on{background:var(--raise);color:var(--ink);border-color:var(--faint)}
 
   /* ---------- Board ---------- */
-  .board{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .board{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
   .col{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
     display:flex;flex-direction:column;min-height:200px}
   .col-head{display:flex;align-items:center;gap:10px;padding:13px 15px;
@@ -113,9 +134,10 @@
     font-size:14.5px;margin:0}
   .col-head .n{margin-left:auto;font-family:"IBM Plex Mono";font-size:13px;color:var(--muted);
     background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:1px 9px}
-  .col.todo  .tab{background:var(--blue)}
-  .col.doing .tab{background:var(--amber)}
-  .col.done  .tab{background:var(--green)}
+  .col.todo   .tab{background:var(--blue)}
+  .col.doing  .tab{background:var(--amber)}
+  .col.done   .tab{background:var(--green)}
+  .col.review .tab{background:var(--lilac)}
   .col-body{padding:12px;display:flex;flex-direction:column;gap:10px;flex:1}
 
   .card{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:11px 12px;
@@ -124,6 +146,9 @@
     text-transform:uppercase;color:var(--faint);border:1px solid var(--line);border-radius:5px;
     padding:2px 7px;margin-bottom:8px}
   .card .subj{font-size:14.5px;line-height:1.35;font-weight:500}
+  .card .revbadge{display:inline-block;font-family:"IBM Plex Mono";font-size:10px;letter-spacing:.03em;
+    color:var(--lilac);border:1px solid rgba(164,140,224,.4);background:rgba(164,140,224,.1);
+    border-radius:5px;padding:2px 7px;margin:0 0 8px 6px}
   .card.done .subj{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
   .card .who{font-size:11.5px;color:var(--faint);margin-top:7px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
   .card .who .act{color:var(--amber)}
@@ -189,8 +214,12 @@
   footer.note{margin-top:26px;text-align:center;color:var(--faint);font-size:11.5px;letter-spacing:.03em}
   footer.note b{color:var(--muted)}
 
+  @media (max-width:1040px){
+    .board{grid-template-columns:repeat(2,1fr)}
+  }
   @media (max-width:860px){
     .board{grid-template-columns:1fr}
+    .mypanel{grid-template-columns:1fr}
     .head-metrics{margin-left:0;width:100%}
     .metric{flex:1;min-width:0}
     .pomo{left:16px;right:16px;bottom:12px}
@@ -234,6 +263,23 @@
     </div>
   </header>
 
+  <!-- ===== Meu Progresso ===== -->
+  <div class="mypanel">
+    <div class="mystats">
+      <h3>Meu progresso</h3>
+      <div class="mystats-grid">
+        <div class="mystat"><div class="k">Concluídos</div><div class="v" id="myDone">0</div></div>
+        <div class="mystat rev"><div class="k">Revisões</div><div class="v" id="myReviews">0</div></div>
+        <div class="mystat streak"><div class="k">Sequência</div><div class="v" id="myStreak">0d</div></div>
+        <div class="mystat"><div class="k">Foco total</div><div class="v" id="myFocus">0min</div></div>
+      </div>
+    </div>
+    <div class="rank">
+      <h3>Quem mais estudou</h3>
+      <div id="rankList"><span class="none">ainda sem dados…</span></div>
+    </div>
+  </div>
+
   <!-- ===== Progresso ===== -->
   <div class="progress-row">
     <div class="bar"><i id="progFill"></i></div>
@@ -262,6 +308,10 @@
     <section class="col done">
       <div class="col-head"><span class="tab"></span><h2>Concluído</h2><span class="n" id="nDone">0</span></div>
       <div class="col-body" id="colDone"></div>
+    </section>
+    <section class="col review">
+      <div class="col-head"><span class="tab"></span><h2>Revisão</h2><span class="n" id="nReview">0</span></div>
+      <div class="col-body" id="colReview"></div>
     </section>
   </div>
 
@@ -361,11 +411,13 @@
   }
   async function sdel(key, shared){ try{ await window.storage.delete(key, shared); }catch(e){} }
 
-  const KEY_CARDS='board:cards', KEY_CFG='board:config', KEY_SEED='board:seeded';
+  const KEY_CARDS='board:cards', KEY_CFG='board:config', KEY_SEED='board:seeded', KEY_STATS='stats:';
   const uid = (p)=> (p||'')+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+  const todayStr = (d)=> (d||new Date()).toISOString().slice(0,10);
 
   /* ---------------- state ---------------- */
-  const state = { me:null, cards:[], cfg:{sala:'Sala CBM-MA', date:'2026-10-18'}, filter:'all' };
+  const state = { me:null, cards:[], cfg:{sala:'Sala CBM-MA', date:'2026-10-18'}, filter:'all',
+    myStats:{focusMinutes:0, focusCycles:0, streak:0, lastActiveDate:null}, allStats:[] };
 
   /* ---------------- seed data (CBM-MA) ---------------- */
   const SEED = [
@@ -427,8 +479,46 @@
   async function refresh(){
     const raw = await sget(KEY_CARDS, true);
     if(raw){ try{ state.cards = JSON.parse(raw) || []; }catch(e){ state.cards=[]; } }
+    await refreshStats();
     render();
     await refreshPresence();
+  }
+
+  /* ---------------- personal/shared stats ---------------- */
+  async function refreshStats(){
+    const keys = await slist(KEY_STATS, true);
+    const all=[];
+    for(const k of keys){
+      const raw = await sget(k, true);
+      if(!raw) continue;
+      let s; try{ s=JSON.parse(raw); }catch(e){ continue; }
+      all.push(Object.assign({id:k.slice(KEY_STATS.length)}, s));
+    }
+    state.allStats = all;
+    if(state.me){
+      const mine = all.find(s=>s.id===state.me.userId);
+      if(mine) state.myStats = mine;
+    }
+  }
+
+  async function bumpStats(delta){
+    if(!state.me) return;
+    const key = KEY_STATS+state.me.userId;
+    const raw = await sget(key, true);
+    let s = {name:state.me.name, focusMinutes:0, focusCycles:0, streak:0, lastActiveDate:null};
+    if(raw){ try{ Object.assign(s, JSON.parse(raw)); }catch(e){} }
+    s.focusMinutes = (s.focusMinutes||0) + (delta.minutes||0);
+    s.focusCycles = (s.focusCycles||0) + (delta.cycles||0);
+    const today = todayStr();
+    if(s.lastActiveDate !== today){
+      const y = new Date(); y.setDate(y.getDate()-1);
+      s.streak = (s.lastActiveDate===todayStr(y)) ? (s.streak||0)+1 : 1;
+      s.lastActiveDate = today;
+    }
+    s.name = state.me.name;
+    state.myStats = s;
+    await sset(key, JSON.stringify(s), true);
+    renderMyPanel();
   }
 
   async function mutateCards(mutator){
@@ -455,19 +545,22 @@
     renderFilters(cards);
     const shown = state.filter==='all' ? cards : cards.filter(c=>c.area===state.filter);
 
-    const byStatus = {todo:[],doing:[],done:[]};
+    const byStatus = {todo:[],doing:[],done:[],review:[]};
     shown.forEach(c=> (byStatus[c.status]||byStatus.todo).push(c));
     byStatus.todo.sort((a,b)=>a.createdAt-b.createdAt);
     byStatus.doing.sort((a,b)=>b.movedAt-a.movedAt);
     byStatus.done.sort((a,b)=>b.movedAt-a.movedAt);
+    byStatus.review.sort((a,b)=>a.movedAt-b.movedAt);
 
-    el('colTodo').innerHTML  = byStatus.todo.length  ? byStatus.todo.map(cardHTML).join('')  : emptyHTML('Fila vazia. Adicione o próximo assunto.');
-    el('colDoing').innerHTML = byStatus.doing.length ? byStatus.doing.map(cardHTML).join('') : emptyHTML('Ninguém estudando agora. Pegue um assunto da fila.');
-    el('colDone').innerHTML  = byStatus.done.length  ? byStatus.done.map(cardHTML).join('')  : emptyHTML('Nada concluído ainda. Bora começar?');
+    el('colTodo').innerHTML   = byStatus.todo.length   ? byStatus.todo.map(cardHTML).join('')   : emptyHTML('Fila vazia. Adicione o próximo assunto.');
+    el('colDoing').innerHTML  = byStatus.doing.length  ? byStatus.doing.map(cardHTML).join('')  : emptyHTML('Ninguém estudando agora. Pegue um assunto da fila.');
+    el('colDone').innerHTML   = byStatus.done.length   ? byStatus.done.map(cardHTML).join('')   : emptyHTML('Nada concluído ainda. Bora começar?');
+    el('colReview').innerHTML = byStatus.review.length ? byStatus.review.map(cardHTML).join('') : emptyHTML('Nada aguardando revisão.');
 
-    el('nTodo').textContent = byStatus.todo.length;
-    el('nDoing').textContent= byStatus.doing.length;
-    el('nDone').textContent = byStatus.done.length;
+    el('nTodo').textContent  = byStatus.todo.length;
+    el('nDoing').textContent = byStatus.doing.length;
+    el('nDone').textContent  = byStatus.done.length;
+    el('nReview').textContent= byStatus.review.length;
 
     // metrics + progress (over full board, not filtered)
     const total = cards.length;
@@ -482,6 +575,50 @@
     // datalist
     const areas=[...new Set(cards.map(c=>c.area).filter(Boolean))].sort();
     el('areaList').innerHTML = areas.map(a=>`<option value="${esc(a)}">`).join('');
+
+    renderMyPanel();
+  }
+
+  const fmtMin = (m)=>{ m=Math.round(m||0); return m<60 ? m+'min' : Math.floor(m/60)+'h'+(m%60?' '+(m%60)+'min':''); };
+
+  function scoreOf(entry){ return (entry.completed||0) + (entry.reviews||0); }
+
+  function renderMyPanel(){
+    // aggregate completed/reviews per user from card history
+    const byUser = new Map();
+    state.cards.forEach(c=>{
+      if(!c.completedBy) return;
+      const s = byUser.get(c.completedBy.id) || {id:c.completedBy.id, name:c.completedBy.name, completed:0, reviews:0};
+      s.completed++; s.reviews += (c.reviewsDone||0); s.name = c.completedBy.name;
+      byUser.set(c.completedBy.id, s);
+    });
+    // merge in shared focus/streak stats (also picks up people with stats but no completions yet)
+    state.allStats.forEach(s=>{
+      const e = byUser.get(s.id) || {id:s.id, name:s.name, completed:0, reviews:0};
+      e.name = s.name || e.name; e.focusMinutes = s.focusMinutes||0; e.streak = s.streak||0;
+      byUser.set(s.id, e);
+    });
+
+    if(state.me){
+      const mine = byUser.get(state.me.userId) || {completed:0, reviews:0};
+      el('myDone').textContent = mine.completed||0;
+      el('myReviews').textContent = mine.reviews||0;
+      el('myStreak').textContent = (state.myStats.streak||0)+'d';
+      el('myFocus').textContent = fmtMin(state.myStats.focusMinutes||0);
+    }
+
+    const ranked = [...byUser.values()].filter(e=>scoreOf(e)>0 || (e.focusMinutes||0)>0)
+      .sort((a,b)=> scoreOf(b)-scoreOf(a) || (b.focusMinutes||0)-(a.focusMinutes||0)).slice(0,6);
+    const list = el('rankList');
+    if(!ranked.length){ list.innerHTML = '<span class="none">ainda sem dados…</span>'; return; }
+    list.innerHTML = ranked.map((e,i)=>{
+      const me = state.me && e.id===state.me.userId;
+      return `<div class="rank-row ${me?'me':''}">
+        <span class="pos">${i+1}</span>
+        <span class="nm">${esc(e.name||'—')}</span>
+        <span class="sc">${e.completed||0}✓ ${e.reviews?('· '+e.reviews+'🔁'):''}</span>
+      </div>`;
+    }).join('');
   }
 
   function cardHTML(c){
@@ -491,8 +628,10 @@
       who = `criado por ${esc(c.ownerName||'—')}`;
     }else if(c.status==='doing'){
       who = `<span class="act">▸ ${esc(c.activeName||c.ownerName||'—')}</span> estudando`;
+    }else if(c.status==='review'){
+      who = `<span class="act">🔁</span> aguardando revisão — última vez por ${esc((c.completedBy&&c.completedBy.name)||'—')}`;
     }else{
-      who = `<span class="act">✓</span> concluído por ${esc(c.activeName||c.ownerName||'—')}`;
+      who = `<span class="act">✓</span> concluído por ${esc((c.completedBy&&c.completedBy.name)||c.activeName||c.ownerName||'—')}`;
     }
     let actions='';
     if(c.status==='todo'){
@@ -500,13 +639,16 @@
     }else if(c.status==='doing'){
       actions += `<button class="act-btn go" data-move="done" data-id="${c.id}">Concluí ✓</button>`;
       actions += `<button class="act-btn" data-move="todo" data-id="${c.id}">Devolver</button>`;
+    }else if(c.status==='review'){
+      actions += `<button class="act-btn pick" data-move="doing" data-id="${c.id}">Revisar agora</button>`;
     }else{
-      actions += `<button class="act-btn" data-move="doing" data-id="${c.id}">Reabrir</button>`;
+      actions += `<button class="act-btn" data-move="review" data-id="${c.id}">Marcar p/ revisão</button>`;
     }
     if(mine) actions += `<button class="act-btn del" data-del="${c.id}" title="Apagar (seu assunto)">Apagar</button>`;
 
+    const badge = c.reviewsDone ? `<span class="revbadge">🔁 ${c.reviewsDone}x</span>` : '';
     return `<div class="card ${c.status}">
-      ${c.area?`<span class="area">${esc(c.area)}</span>`:''}
+      ${c.area?`<span class="area">${esc(c.area)}</span>`:''}${badge}
       <div class="subj">${esc(c.subject)}</div>
       <div class="who">${who}</div>
       <div class="card-actions">${actions}</div>
@@ -535,15 +677,25 @@
 
   /* ---------------- actions ---------------- */
   async function moveCard(id, to){
+    let wasReviewCompletion=false;
     await mutateCards(cards=>{
       const c=cards.find(x=>x.id===id); if(!c) return cards;
+      const from = c.status;
+      if(to==='doing'){ c.reviewCycle = (from==='review'); }
       c.status=to; c.movedAt=Date.now();
       if(to==='doing' || to==='done'){ c.activeName = state.me?state.me.name:c.activeName; }
       if(to==='todo'){ c.activeName=null; }
+      if(to==='review'){ c.activeName=null; }
+      if(to==='done'){
+        c.completedBy = state.me ? {id:state.me.userId, name:state.me.name} : c.completedBy;
+        if(c.reviewCycle){ c.reviewsDone=(c.reviewsDone||0)+1; c.reviewCycle=false; wasReviewCompletion=true; }
+      }
       return cards;
     });
-    if(to==='done') toast('Assunto concluído — mandou bem! 🎯');
+    if(to==='done') toast(wasReviewCompletion ? 'Revisão concluída — mandou bem! 🎯' : 'Assunto concluído — mandou bem! 🎯');
     if(to==='doing') toast('Bom estudo! Foco total. 🔥');
+    if(to==='review') toast('Marcado para revisão. Volte quando quiser reforçar. 🔁');
+    if(state.me && (to==='doing' || to==='done')) bumpStats({});
   }
 
   async function deleteCard(id){
@@ -693,6 +845,7 @@
       left--;
       if(left<0){
         if(mode==='focus'){ cycles++; cyc.textContent='×'+cycles; sset('pomo:cycles', String(cycles), false);
+          bumpStats({minutes:dur.focus/60, cycles:1});
           mode='break'; left=dur.break; toast('Ciclo de foco concluído. Respira 5 min. ☕'); }
         else { mode='focus'; left=dur.focus; toast('Pausa acabou. De volta ao foco! 🔥'); }
       }
