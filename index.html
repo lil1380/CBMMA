@@ -5,9 +5,6 @@
 -->
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 
 <style>
   :root{
@@ -51,7 +48,7 @@
     background:radial-gradient(circle at 30% 25%,#e7414c,var(--red-deep));
     display:grid;place-items:center;box-shadow:inset 0 0 0 2px rgba(255,255,255,.14)}
   .badge svg{width:24px;height:24px}
-  .brand h1{font-family:"Oswald";font-weight:700;font-size:21px;line-height:1;margin:0;
+  .brand h1{font-family:"Oswald","Arial Narrow","Helvetica Neue",Arial,sans-serif;font-weight:700;font-size:21px;line-height:1;margin:0;
     letter-spacing:.045em;text-transform:uppercase}
   .brand .sub{font-size:11.5px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:5px}
   .brand .sala{color:var(--ink)}
@@ -60,7 +57,7 @@
   .metric{background:var(--panel);border:1px solid var(--line);border-radius:9px;
     padding:9px 15px;min-width:104px;text-align:center}
   .metric .k{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
-  .metric .v{font-family:"IBM Plex Mono";font-weight:600;font-size:22px;line-height:1.15;margin-top:3px}
+  .metric .v{font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:600;font-size:22px;line-height:1.15;margin-top:3px}
   .metric.count-red .v{color:var(--red)}
   .metric.count-live .v{color:var(--green)}
   .metric .dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);
@@ -77,28 +74,28 @@
   .chip-who{display:inline-flex;align-items:center;gap:6px;background:var(--raise);
     border:1px solid var(--line);border-radius:20px;padding:4px 11px 4px 8px;font-size:12.5px}
   .chip-who .av{width:19px;height:19px;border-radius:50%;display:grid;place-items:center;
-    font-size:10px;font-weight:600;color:#0d1116;font-family:"IBM Plex Mono"}
+    font-size:10px;font-weight:600;color:#0d1116;font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace}
   .chip-who.me{border-color:var(--green)}
   .presence .none{font-size:12.5px;color:var(--faint);font-style:italic}
 
   /* ---------- Meu Progresso ---------- */
   .mypanel{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-bottom:18px}
   .mystats{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
-  .mystats h3, .rank h3{font-family:"Oswald";font-weight:600;text-transform:uppercase;letter-spacing:.06em;
+  .mystats h3, .rank h3{font-family:"Oswald","Arial Narrow","Helvetica Neue",Arial,sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.06em;
     font-size:13px;margin:0 0 12px;color:var(--muted)}
   .mystats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
   .mystat{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:8px;padding:9px 11px}
   .mystat .k{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
-  .mystat .v{font-family:"IBM Plex Mono";font-weight:600;font-size:18px;margin-top:2px}
+  .mystat .v{font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:600;font-size:18px;margin-top:2px}
   .mystat.streak .v{color:var(--amber)}
   .mystat.rev .v{color:var(--lilac)}
   .rank{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
   .rank-row{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--line-soft);font-size:13px}
   .rank-row:last-child{border-bottom:none}
-  .rank-row .pos{width:16px;flex:0 0 16px;color:var(--faint);font-family:"IBM Plex Mono";font-size:11.5px;text-align:center}
+  .rank-row .pos{width:16px;flex:0 0 16px;color:var(--faint);font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:11.5px;text-align:center}
   .rank-row .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .rank-row.me .nm{color:var(--green);font-weight:600}
-  .rank-row .sc{font-family:"IBM Plex Mono";color:var(--muted);font-size:12px}
+  .rank-row .sc{font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;color:var(--muted);font-size:12px}
   .rank .none{color:var(--faint);font-size:12.5px;font-style:italic}
 
   /* ---------- Progress ---------- */
@@ -107,7 +104,7 @@
     border-radius:20px;overflow:hidden}
   .bar > i{display:block;height:100%;width:0;border-radius:20px;
     background:linear-gradient(90deg,var(--green),#59c795);transition:width .5s ease}
-  .progress-row .txt{font-family:"IBM Plex Mono";font-size:13px;color:var(--muted)}
+  .progress-row .txt{font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:13px;color:var(--muted)}
   .progress-row .txt b{color:var(--ink)}
 
   /* ---------- Toolbar ---------- */
@@ -130,9 +127,9 @@
   .col-head{display:flex;align-items:center;gap:10px;padding:13px 15px;
     border-bottom:1px solid var(--line-soft)}
   .col-head .tab{width:4px;height:20px;border-radius:3px}
-  .col-head h2{font-family:"Oswald";font-weight:600;text-transform:uppercase;letter-spacing:.07em;
+  .col-head h2{font-family:"Oswald","Arial Narrow","Helvetica Neue",Arial,sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.07em;
     font-size:14.5px;margin:0}
-  .col-head .n{margin-left:auto;font-family:"IBM Plex Mono";font-size:13px;color:var(--muted);
+  .col-head .n{margin-left:auto;font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:13px;color:var(--muted);
     background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:1px 9px}
   .col.todo   .tab{background:var(--blue)}
   .col.doing  .tab{background:var(--amber)}
@@ -142,11 +139,11 @@
 
   .card{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:11px 12px;
     box-shadow:0 1px 0 rgba(0,0,0,.2)}
-  .card .area{display:inline-block;font-family:"IBM Plex Mono";font-size:10px;letter-spacing:.05em;
+  .card .area{display:inline-block;font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:10px;letter-spacing:.05em;
     text-transform:uppercase;color:var(--faint);border:1px solid var(--line);border-radius:5px;
     padding:2px 7px;margin-bottom:8px}
   .card .subj{font-size:14.5px;line-height:1.35;font-weight:500}
-  .card .revbadge{display:inline-block;font-family:"IBM Plex Mono";font-size:10px;letter-spacing:.03em;
+  .card .revbadge{display:inline-block;font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:10px;letter-spacing:.03em;
     color:var(--lilac);border:1px solid rgba(164,140,224,.4);background:rgba(164,140,224,.1);
     border-radius:5px;padding:2px 7px;margin:0 0 8px 6px}
   .card.done .subj{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
@@ -169,7 +166,7 @@
   .pomo{position:fixed;right:16px;bottom:16px;z-index:40;background:var(--panel-2);
     border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);
     padding:12px 14px;display:flex;align-items:center;gap:14px;min-width:210px}
-  .pomo .time{font-family:"IBM Plex Mono";font-weight:600;font-size:26px;letter-spacing:.02em}
+  .pomo .time{font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:600;font-size:26px;letter-spacing:.02em}
   .pomo.break .time{color:var(--green)}
   .pomo .pmeta{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint)}
   .pomo .pbtns{display:flex;gap:6px;margin-left:auto}
@@ -178,7 +175,7 @@
   .pbtn:hover{border-color:var(--faint)}
   .pbtn.play{background:var(--red);border-color:var(--red);color:#fff}
   .pbtn.play:hover{background:#e4343f}
-  .pomo .cyc{font-family:"IBM Plex Mono";font-size:11px;color:var(--muted)}
+  .pomo .cyc{font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:11px;color:var(--muted)}
 
   /* ---------- Overlays / modals ---------- */
   .veil{position:fixed;inset:0;background:rgba(8,11,14,.72);backdrop-filter:blur(3px);
@@ -186,7 +183,7 @@
   .veil[hidden]{display:none}
   .modal{background:var(--panel);border:1px solid var(--line);border-radius:14px;
     width:100%;max-width:420px;padding:24px;box-shadow:var(--shadow)}
-  .modal h3{font-family:"Oswald";font-weight:600;text-transform:uppercase;letter-spacing:.05em;
+  .modal h3{font-family:"Oswald","Arial Narrow","Helvetica Neue",Arial,sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.05em;
     font-size:19px;margin:0 0 5px}
   .modal p{color:var(--muted);font-size:13.5px;line-height:1.5;margin:0 0 18px}
   .field{margin-bottom:14px}
