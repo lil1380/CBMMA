@@ -246,9 +246,17 @@
   .field{margin-bottom:14px}
   .field label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
     color:var(--faint);margin-bottom:6px}
-  .field input, .field select{width:100%;background:var(--bg);border:1px solid var(--line);
-    color:var(--ink);border-radius:8px;padding:11px 12px;font-size:14px;font-family:inherit}
-  .field input::placeholder{color:var(--faint)}
+  .field input, .field select, .field textarea{width:100%;background:var(--bg);border:1px solid var(--line);
+    color:var(--ink);border-radius:8px;padding:11px 12px;font-size:14px;font-family:inherit;resize:vertical}
+  .field input::placeholder, .field textarea::placeholder{color:var(--faint)}
+  .notes-list{display:flex;flex-direction:column;gap:8px;max-height:320px;overflow-y:auto}
+  .note-card{background:var(--panel-2);border:1px solid var(--line-soft);border-left:3px solid var(--amber);
+    border-radius:8px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start}
+  .note-card .nc-text{flex:1;min-width:0;font-size:13px;line-height:1.5;color:var(--ink);white-space:pre-wrap;word-break:break-word}
+  .note-card .nc-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+  .note-card .nc-date{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;color:var(--faint);white-space:nowrap}
+  .note-card .nc-del{background:transparent;border:none;color:var(--faint);font-size:12px;padding:2px 4px}
+  .note-card .nc-del:hover{color:var(--red)}
   .modal-actions{display:flex;gap:10px;margin-top:6px}
   .btn-primary{flex:1;background:var(--red);color:#fff;border:none;border-radius:8px;
     padding:12px;font-weight:600;font-size:14px}
@@ -410,6 +418,7 @@
         </div>
         <button class="gear" id="btnSettings" title="Ajustes da sala" aria-label="Ajustes da sala">⚙</button>
         <button class="gear" id="btnHistory" title="Meu histórico" aria-label="Meu histórico" hidden>📅</button>
+        <button class="gear" id="btnNotes" title="Meu bloco de notas" aria-label="Meu bloco de notas" hidden>📝</button>
         <button class="gear" id="btnAdminPanel" title="Painel Admin" aria-label="Painel Admin" hidden>🛡️</button>
         <div class="hd-user" id="hdUser" hidden>
           <button class="av" id="hdAv" title="Minha conta">—</button>
@@ -704,6 +713,27 @@
 
     <div class="modal-actions" style="margin-top:14px">
       <button class="btn-ghost" id="cancelHistory" style="flex:1">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Meu bloco de notas -->
+<div class="veil" id="notesModal" hidden>
+  <div class="modal modal-wide">
+    <h3>Meu bloco de notas</h3>
+    <p>Motivação, sonhos, conquistas — só você vê isso aqui.</p>
+
+    <div class="field">
+      <textarea id="noteText" rows="3" maxlength="500" placeholder="ex: lembrar por que comecei…"></textarea>
+    </div>
+    <div class="modal-actions" style="margin-bottom:16px">
+      <button class="btn-primary" id="btnAddNote" style="flex:1">Guardar nota</button>
+    </div>
+
+    <div id="notesList" class="notes-list"></div>
+
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn-ghost" id="cancelNotes" style="flex:1">Fechar</button>
     </div>
   </div>
 </div>
@@ -1044,6 +1074,50 @@
       </div>`).join('');
   }
 
+  /* ---------------- bloco de notas pessoal (privado) ---------------- */
+  function fmtNoteDate(ts){
+    return new Date(ts).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'2-digit'});
+  }
+  async function openNotes(){
+    el('noteText').value = '';
+    el('notesModal').hidden = false;
+    await renderNotesList();
+  }
+  async function renderNotesList(){
+    const wrap = el('notesList');
+    const {data, error} = await supa.from('personal_notes').select('*')
+      .eq('user_id', state.me.id).order('created_at', {ascending:false});
+    if(error){ console.error(error); wrap.innerHTML = '<span class="hint">não deu pra carregar.</span>'; return; }
+    if(!data || !data.length){ wrap.innerHTML = '<span class="hint">nenhuma nota ainda. Escreva algo pra lembrar depois.</span>'; return; }
+    wrap.innerHTML = data.map(n=>`
+      <div class="note-card">
+        <div class="nc-text">${esc(n.text)}</div>
+        <div class="nc-meta">
+          <span class="nc-date">${fmtNoteDate(n.created_at)}</span>
+          <button class="nc-del" data-delnote="${n.id}" title="Apagar nota">Apagar</button>
+        </div>
+      </div>`).join('');
+    wrap.querySelectorAll('[data-delnote]').forEach(b=>{
+      b.onclick = ()=> deleteNote(b.getAttribute('data-delnote'));
+    });
+  }
+  async function addNote(){
+    const text = el('noteText').value.trim();
+    if(!text) return;
+    el('btnAddNote').disabled = true;
+    const {error} = await supa.from('personal_notes').insert({user_id: state.me.id, text, created_at: Date.now()});
+    el('btnAddNote').disabled = false;
+    if(error){ console.error(error); toast('Não deu pra guardar a nota.'); return; }
+    el('noteText').value = '';
+    await renderNotesList();
+  }
+  async function deleteNote(id){
+    if(!confirm('Apagar essa nota?')) return;
+    const {error} = await supa.from('personal_notes').delete().eq('id', id);
+    if(error){ console.error(error); toast('Não deu pra apagar.'); return; }
+    await renderNotesList();
+  }
+
   async function importarEdital(){
     const {data: existing, error} = await supa.from('cards').select('subject').eq('owner_id', state.me.id);
     if(error){ console.error(error); toast('Não deu pra conferir seus assuntos.'); return; }
@@ -1219,6 +1293,7 @@
     el('hdAv').style.background = avColor(nm);
     el('btnAdminPanel').hidden = !state.myProfile.is_admin;
     el('btnHistory').hidden = false;
+    el('btnNotes').hidden = false;
   }
 
   async function boot(){
@@ -1787,6 +1862,11 @@
     el('histPrevMonth').onclick=()=>{ histViewDate.setMonth(histViewDate.getMonth()-1); renderHistCalendar(); };
     el('histNextMonth').onclick=()=>{ histViewDate.setMonth(histViewDate.getMonth()+1); renderHistCalendar(); };
     el('histSearch').addEventListener('input', renderHistSubjects);
+
+    // bloco de notas
+    el('btnNotes').onclick=()=> openNotes();
+    el('cancelNotes').onclick=()=> el('notesModal').hidden=true;
+    el('btnAddNote').onclick=()=> addNote();
 
     el('btnAdminPanel').onclick=()=>{
       el('adminUser').value=''; el('adminCodeResult').textContent='';

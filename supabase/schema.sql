@@ -27,6 +27,7 @@ drop function if exists public.admin_delete_user(text);
 drop function if exists public.reset_password_with_code(text, text, text);
 drop function if exists public.reset_password_with_admin_code(text, text, text);
 drop function if exists public.admin_generate_reset_code(text);
+drop table if exists public.personal_notes;
 drop table if exists public.study_events;
 drop table if exists public.pomodoro_sessions;
 drop table if exists public.recovery_attempts;
@@ -127,6 +128,18 @@ alter table public.study_events enable row level security;
 create policy "study_events select own" on public.study_events for select to authenticated using (user_id = auth.uid());
 create policy "study_events insert own" on public.study_events for insert to authenticated with check (user_id = auth.uid());
 create policy "study_events delete own" on public.study_events for delete to authenticated using (user_id = auth.uid());
+
+-- Bloco de notas pessoal (motivação, sonhos, conquistas) — só o dono vê.
+create table public.personal_notes (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  text text not null,
+  created_at bigint not null
+);
+alter table public.personal_notes enable row level security;
+create policy "personal_notes select own" on public.personal_notes for select to authenticated using (user_id = auth.uid());
+create policy "personal_notes insert own" on public.personal_notes for insert to authenticated with check (user_id = auth.uid());
+create policy "personal_notes delete own" on public.personal_notes for delete to authenticated using (user_id = auth.uid());
 
 -- ===== Recuperação de senha sem e-mail =====
 
