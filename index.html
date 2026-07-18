@@ -234,20 +234,26 @@
   .pbtn.play:hover{background:#e4343f}
   .pomo .cyc{font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:11px;color:var(--muted)}
 
-  /* ---------- Post-it (nota pessoal flutuante) ---------- */
-  .note-widget{position:fixed;left:16px;bottom:16px;z-index:39;max-width:210px;transform:rotate(-2deg)}
+  /* ---------- Post-its (notas pessoais flutuantes, todas visíveis) ---------- */
+  .note-widget{position:fixed;left:16px;bottom:16px;z-index:39;width:210px;max-height:min(60vh,420px);
+    display:flex;flex-direction:column}
   .note-widget[hidden]{display:none}
-  .note-widget .nw-body{background:#f2c94c;color:#3a2e05;border:none;border-radius:3px 16px 4px 4px;
-    padding:12px 14px;box-shadow:0 10px 24px rgba(0,0,0,.4);cursor:pointer;font-family:inherit;
-    display:flex;gap:8px;align-items:flex-start;text-align:left;transition:transform .15s ease;width:100%}
-  .note-widget:hover .nw-body{transform:scale(1.03)}
-  .note-widget .nw-pin{font-size:14px;line-height:1;flex:0 0 auto}
-  .note-widget .nw-text{flex:1;min-width:0;font-size:12.5px;line-height:1.45;font-weight:500;
-    display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
-  .note-widget .nw-close{position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:50%;
-    background:var(--panel-2);border:1px solid var(--line);color:var(--muted);font-size:13px;line-height:1;
-    display:grid;place-items:center;padding:0}
-  .note-widget .nw-close:hover{color:var(--red);border-color:var(--red)}
+  .note-widget .nw-head{display:flex;align-items:center;justify-content:space-between;gap:8px;
+    background:var(--panel-2);border:1px solid var(--line);border-radius:9px 9px 0 0;
+    padding:7px 8px 7px 11px;font-size:11px;color:var(--muted);letter-spacing:.04em}
+  .note-widget .nw-close{background:transparent;border:none;color:var(--faint);font-size:15px;
+    line-height:1;padding:2px 5px}
+  .note-widget .nw-close:hover{color:var(--red)}
+  .nw-stack{display:flex;flex-direction:column;gap:7px;overflow-y:auto;padding:9px;
+    background:var(--panel);border:1px solid var(--line);border-top:none;border-radius:0 0 9px 9px;
+    box-shadow:0 10px 24px rgba(0,0,0,.4)}
+  .nw-note{background:#f2c94c;color:#3a2e05;border:none;border-radius:3px 12px 4px 4px;
+    padding:9px 11px;font-size:12px;line-height:1.42;font-weight:500;text-align:left;font-family:inherit;
+    cursor:pointer;white-space:pre-wrap;word-break:break-word;box-shadow:0 4px 10px rgba(0,0,0,.25);
+    transition:transform .12s ease}
+  .nw-note:nth-child(odd){transform:rotate(-1.2deg)}
+  .nw-note:nth-child(even){transform:rotate(1deg)}
+  .nw-note:hover{transform:scale(1.04)}
 
   /* ---------- Overlays / modals ---------- */
   .veil{position:fixed;inset:0;background:rgba(8,11,14,.72);backdrop-filter:blur(3px);
@@ -400,7 +406,7 @@
     .head-metrics{margin-left:0;width:100%}
     .metric{flex:1;min-width:0}
     .pomo{left:16px;right:16px;bottom:12px}
-    .note-widget{left:16px;top:16px;bottom:auto;max-width:150px}
+    .note-widget{left:16px;top:16px;bottom:auto;width:150px;max-height:40vh}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -551,11 +557,11 @@
 
 <!-- Post-it: minha nota, sempre visível na tela -->
 <div class="note-widget" id="noteWidget" hidden>
-  <button class="nw-close" id="noteWidgetClose" title="Esconder nota" aria-label="Esconder nota">×</button>
-  <button class="nw-body" id="noteWidgetOpen" title="Clique pra ver/editar suas notas">
-    <span class="nw-pin">📌</span>
-    <span class="nw-text" id="noteWidgetText">—</span>
-  </button>
+  <div class="nw-head">
+    <span>📌 Minhas notas</span>
+    <button class="nw-close" id="noteWidgetClose" title="Esconder notas" aria-label="Esconder notas">×</button>
+  </div>
+  <div class="nw-stack" id="noteWidgetStack"></div>
 </div>
 
 <!-- Autenticação -->
@@ -1143,8 +1149,12 @@
     const w = el('noteWidget');
     if(!state.me || isNoteWidgetHidden() || !myNotes.length){ w.hidden = true; return; }
     w.hidden = false;
-    const idx = Math.floor(Date.now()/30000) % myNotes.length;
-    el('noteWidgetText').textContent = myNotes[idx].text;
+    el('noteWidgetStack').innerHTML = myNotes.map(n=>
+      `<button class="nw-note" data-opennote="${n.id}">${esc(n.text)}</button>`
+    ).join('');
+    el('noteWidgetStack').querySelectorAll('[data-opennote]').forEach(b=>{
+      b.onclick = ()=> openNotes();
+    });
   }
   async function addNote(){
     const text = el('noteText').value.trim();
@@ -1917,7 +1927,6 @@
     el('btnNotes').onclick=()=>{ setNoteWidgetHidden(false); openNotes(); };
     el('cancelNotes').onclick=()=> el('notesModal').hidden=true;
     el('btnAddNote').onclick=()=> addNote();
-    el('noteWidgetOpen').onclick=()=> openNotes();
     el('noteWidgetClose').onclick=()=>{ setNoteWidgetHidden(true); el('noteWidget').hidden=true; };
 
     el('btnAdminPanel').onclick=()=>{
