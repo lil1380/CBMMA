@@ -234,6 +234,21 @@
   .pbtn.play:hover{background:#e4343f}
   .pomo .cyc{font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:11px;color:var(--muted)}
 
+  /* ---------- Post-it (nota pessoal flutuante) ---------- */
+  .note-widget{position:fixed;left:16px;bottom:16px;z-index:39;max-width:210px;transform:rotate(-2deg)}
+  .note-widget[hidden]{display:none}
+  .note-widget .nw-body{background:#f2c94c;color:#3a2e05;border:none;border-radius:3px 16px 4px 4px;
+    padding:12px 14px;box-shadow:0 10px 24px rgba(0,0,0,.4);cursor:pointer;font-family:inherit;
+    display:flex;gap:8px;align-items:flex-start;text-align:left;transition:transform .15s ease;width:100%}
+  .note-widget:hover .nw-body{transform:scale(1.03)}
+  .note-widget .nw-pin{font-size:14px;line-height:1;flex:0 0 auto}
+  .note-widget .nw-text{flex:1;min-width:0;font-size:12.5px;line-height:1.45;font-weight:500;
+    display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+  .note-widget .nw-close{position:absolute;top:-8px;right:-8px;width:20px;height:20px;border-radius:50%;
+    background:var(--panel-2);border:1px solid var(--line);color:var(--muted);font-size:13px;line-height:1;
+    display:grid;place-items:center;padding:0}
+  .note-widget .nw-close:hover{color:var(--red);border-color:var(--red)}
+
   /* ---------- Overlays / modals ---------- */
   .veil{position:fixed;inset:0;background:rgba(8,11,14,.72);backdrop-filter:blur(3px);
     z-index:60;display:grid;place-items:center;padding:20px}
@@ -385,6 +400,7 @@
     .head-metrics{margin-left:0;width:100%}
     .metric{flex:1;min-width:0}
     .pomo{left:16px;right:16px;bottom:12px}
+    .note-widget{left:16px;top:16px;bottom:auto;max-width:150px}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -531,6 +547,15 @@
     <button class="pbtn" id="pomoReset" aria-label="Reiniciar">↺</button>
   </div>
   <div class="cyc" id="pomoCyc" title="Ciclos de foco concluídos">×0</div>
+</div>
+
+<!-- Post-it: minha nota, sempre visível na tela -->
+<div class="note-widget" id="noteWidget" hidden>
+  <button class="nw-close" id="noteWidgetClose" title="Esconder nota" aria-label="Esconder nota">×</button>
+  <button class="nw-body" id="noteWidgetOpen" title="Clique pra ver/editar suas notas">
+    <span class="nw-pin">📌</span>
+    <span class="nw-text" id="noteWidgetText">—</span>
+  </button>
 </div>
 
 <!-- Autenticação -->
@@ -851,6 +876,10 @@
   let loopTimer=null, hbTimer=null, cdTimer=null;
   let histViewDate = new Date();
   let histEvents = [];
+  let myNotes = [];
+  const NOTE_HIDDEN_KEY = 'sala:noteWidgetHidden';
+  const isNoteWidgetHidden = ()=> localStorage.getItem(NOTE_HIDDEN_KEY) === '1';
+  const setNoteWidgetHidden = (v)=> localStorage.setItem(NOTE_HIDDEN_KEY, v ? '1' : '0');
 
   /* ---------------- criptografia leve no navegador ---------------- */
   async function sha256Hex(text){
@@ -1081,15 +1110,24 @@
   async function openNotes(){
     el('noteText').value = '';
     el('notesModal').hidden = false;
-    await renderNotesList();
+    await loadMyNotes();
   }
-  async function renderNotesList(){
-    const wrap = el('notesList');
+  // busca as notas, guarda em myNotes e atualiza tanto a lista do modal
+  // quanto o post-it flutuante — uma fonte só pros dois lugares.
+  async function loadMyNotes(){
+    if(!state.me) return;
     const {data, error} = await supa.from('personal_notes').select('*')
       .eq('user_id', state.me.id).order('created_at', {ascending:false});
-    if(error){ console.error(error); wrap.innerHTML = '<span class="hint">não deu pra carregar.</span>'; return; }
-    if(!data || !data.length){ wrap.innerHTML = '<span class="hint">nenhuma nota ainda. Escreva algo pra lembrar depois.</span>'; return; }
-    wrap.innerHTML = data.map(n=>`
+    if(error){ console.error(error); return; }
+    myNotes = data || [];
+    renderNotesList();
+    renderNoteWidget();
+  }
+  function renderNotesList(){
+    const wrap = el('notesList');
+    if(!wrap) return;
+    if(!myNotes.length){ wrap.innerHTML = '<span class="hint">nenhuma nota ainda. Escreva algo pra lembrar depois.</span>'; return; }
+    wrap.innerHTML = myNotes.map(n=>`
       <div class="note-card">
         <div class="nc-text">${esc(n.text)}</div>
         <div class="nc-meta">
@@ -1101,6 +1139,13 @@
       b.onclick = ()=> deleteNote(b.getAttribute('data-delnote'));
     });
   }
+  function renderNoteWidget(){
+    const w = el('noteWidget');
+    if(!state.me || isNoteWidgetHidden() || !myNotes.length){ w.hidden = true; return; }
+    w.hidden = false;
+    const idx = Math.floor(Date.now()/30000) % myNotes.length;
+    el('noteWidgetText').textContent = myNotes[idx].text;
+  }
   async function addNote(){
     const text = el('noteText').value.trim();
     if(!text) return;
@@ -1109,13 +1154,13 @@
     el('btnAddNote').disabled = false;
     if(error){ console.error(error); toast('Não deu pra guardar a nota.'); return; }
     el('noteText').value = '';
-    await renderNotesList();
+    await loadMyNotes();
   }
   async function deleteNote(id){
     if(!confirm('Apagar essa nota?')) return;
     const {error} = await supa.from('personal_notes').delete().eq('id', id);
     if(error){ console.error(error); toast('Não deu pra apagar.'); return; }
-    await renderNotesList();
+    await loadMyNotes();
   }
 
   async function importarEdital(){
@@ -1266,16 +1311,20 @@
       appIniciado = true;
       await loadConfig();
       await refresh();
+      await loadMyNotes();
       startLoops();
       wireUI();
       initPomodoro();
     } else {
       await refresh();
+      await loadMyNotes();
     }
   }
   function handleSignedOut(){
     stopLoops();
     state.me=null; state.myProfile=null; state.cards=[]; state.profiles=[];
+    myNotes = [];
+    el('noteWidget').hidden = true;
     el('hdUser').hidden = true;
     el('authVeil').hidden = false;
     showAuthPane('login');
@@ -1466,6 +1515,7 @@
     renderStats();
     renderBot();
     renderFeed();
+    renderNoteWidget();
   }
 
   function renderStats(){
@@ -1864,9 +1914,11 @@
     el('histSearch').addEventListener('input', renderHistSubjects);
 
     // bloco de notas
-    el('btnNotes').onclick=()=> openNotes();
+    el('btnNotes').onclick=()=>{ setNoteWidgetHidden(false); openNotes(); };
     el('cancelNotes').onclick=()=> el('notesModal').hidden=true;
     el('btnAddNote').onclick=()=> addNote();
+    el('noteWidgetOpen').onclick=()=> openNotes();
+    el('noteWidgetClose').onclick=()=>{ setNoteWidgetHidden(true); el('noteWidget').hidden=true; };
 
     el('btnAdminPanel').onclick=()=>{
       el('adminUser').value=''; el('adminCodeResult').textContent='';
