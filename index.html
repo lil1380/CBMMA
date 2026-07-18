@@ -299,6 +299,18 @@
   .btn-danger{width:100%;background:transparent;border:1px solid var(--red);color:#f0a6ab;border-radius:8px;
     padding:11px;font-weight:600;font-size:13.5px}
   .btn-danger:hover{background:rgba(216,35,47,.15)}
+  .modal-wide{max-width:560px}
+  .admin-section{border:1px solid var(--line);background:var(--panel-2);border-radius:9px;padding:14px;margin-bottom:14px}
+  .admin-section h4{margin:0 0 6px;font-size:12.5px;color:var(--ink);text-transform:uppercase;letter-spacing:.06em}
+  .admin-section > p.hint{margin:0 0 12px}
+  .admin-card-list{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;margin-top:10px}
+  .admin-card-row{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line-soft);
+    border-radius:7px;padding:7px 9px;font-size:12px}
+  .admin-card-row .ai{flex:1;min-width:0}
+  .admin-card-row .ai .as{font-weight:500;color:var(--ink)}
+  .admin-card-row .ai .am{color:var(--faint);font-size:11px;margin-top:1px}
+  .admin-card-row .adel{background:transparent;border:none;color:var(--faint);font-size:12px;padding:3px 6px;white-space:nowrap}
+  .admin-card-row .adel:hover{color:var(--red)}
 
   /* ---------- Toast ---------- */
   .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;z-index:80;
@@ -351,6 +363,7 @@
           <div class="v"><span class="dot"></span><span id="mLive">0</span></div>
         </div>
         <button class="gear" id="btnSettings" title="Ajustes da sala" aria-label="Ajustes da sala">⚙</button>
+        <button class="gear" id="btnAdminPanel" title="Painel Admin" aria-label="Painel Admin" hidden>🛡️</button>
         <div class="hd-user" id="hdUser" hidden>
           <button class="av" id="hdAv" title="Minha conta">—</button>
         </div>
@@ -554,9 +567,26 @@
       <button class="btn-ghost" id="btnImportEdital" style="width:100%">Importar assuntos do edital que faltam</button>
     </div>
 
-    <div class="danger-zone" id="adminZone" hidden>
-      <h4>Administração</h4>
-      <p>Gere um código de reset de senha válido por 24h para outra pessoa da sala. Entregue o código fora do sistema (WhatsApp, presencial).</p>
+    <div class="danger-zone">
+      <h4>Zona de risco</h4>
+      <p>Apaga sua conta, seus assuntos e suas estatísticas para sempre. Não tem como desfazer.</p>
+      <button class="btn-danger" id="btnDeleteAccount">Excluir minha conta e meus dados</button>
+    </div>
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn-ghost" id="cancelAcc" style="flex:1">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Painel Admin (só aparece para quem é administrador) -->
+<div class="veil" id="adminModal" hidden>
+  <div class="modal modal-wide">
+    <h3>Painel Admin</h3>
+    <p>Ferramentas de administração da sala — visíveis só para você.</p>
+
+    <div class="admin-section">
+      <h4>Gerar código de reset de senha</h4>
+      <p class="hint">Válido por 24h. Entregue fora do sistema (WhatsApp, presencial).</p>
       <div class="field">
         <label for="adminUser">Usuário da pessoa</label>
         <input id="adminUser" autocomplete="off" maxlength="24" placeholder="ex: lilian" />
@@ -565,13 +595,33 @@
       <div class="hint" id="adminCodeResult" style="margin-top:8px"></div>
     </div>
 
-    <div class="danger-zone">
-      <h4>Zona de risco</h4>
-      <p>Apaga sua conta, seus assuntos e suas estatísticas para sempre. Não tem como desfazer.</p>
-      <button class="btn-danger" id="btnDeleteAccount">Excluir minha conta e meus dados</button>
+    <div class="admin-section">
+      <h4>Apagar assunto de qualquer pessoa</h4>
+      <div class="field">
+        <label for="adminCardSearch">Buscar por assunto, matéria ou usuário</label>
+        <input id="adminCardSearch" autocomplete="off" placeholder="digite para filtrar" />
+      </div>
+      <div id="adminCardList" class="admin-card-list"><span class="hint">digite algo para buscar</span></div>
     </div>
+
+    <div class="danger-zone">
+      <h4>Excluir conta de outra pessoa</h4>
+      <p>Apaga a conta, os assuntos e as estatísticas dessa pessoa para sempre. Não tem como desfazer.</p>
+      <div class="field">
+        <label for="adminDelUser">Usuário</label>
+        <input id="adminDelUser" autocomplete="off" maxlength="24" placeholder="ex: teste123" />
+      </div>
+      <button class="btn-danger" id="btnAdminDeleteUser" style="width:100%">Excluir essa conta</button>
+    </div>
+
+    <div class="danger-zone">
+      <h4>Resetar a sala</h4>
+      <p>Apaga <b>todos os assuntos de todas as contas</b> (mantém logins e contas). Use pra limpar dados de teste.</p>
+      <button class="btn-danger" id="btnResetRoom" style="width:100%">Apagar todos os assuntos da sala</button>
+    </div>
+
     <div class="modal-actions" style="margin-top:14px">
-      <button class="btn-ghost" id="cancelAcc" style="flex:1">Fechar</button>
+      <button class="btn-ghost" id="cancelAdmin" style="flex:1">Fechar</button>
     </div>
   </div>
 </div>
@@ -745,6 +795,39 @@
   // Popula a fila da conta nova com todo o edital, pra garantir que nada
   // fique de fora. Só roda uma vez, na criação da conta.
   // Preenche só o que falta do edital na fila de quem já tem conta (não duplica).
+  // painel admin: apagar assunto de qualquer pessoa (busca sobre state.cards, que já traz tudo da sala)
+  function renderAdminCardSearch(){
+    const q = el('adminCardSearch').value.trim().toLowerCase();
+    const wrap = el('adminCardList');
+    if(!q){ wrap.innerHTML = '<span class="hint">digite algo para buscar</span>'; return; }
+    const matches = state.cards.filter(c=>{
+      const owner = profileName(c.ownerId).toLowerCase();
+      return c.subject.toLowerCase().includes(q) || (c.area||'').toLowerCase().includes(q) || owner.includes(q);
+    }).slice(0,40);
+    if(!matches.length){ wrap.innerHTML = '<span class="hint">nada encontrado</span>'; return; }
+    wrap.innerHTML = matches.map(c=>{
+      const owner = profileName(c.ownerId);
+      return `<div class="admin-card-row">
+        <div class="ai"><div class="as">${esc(c.subject)}</div><div class="am">${esc(c.area||'—')} · ${esc(owner)} · ${esc(c.status)}</div></div>
+        <button class="adel" data-admindel="${c.id}">Apagar</button>
+      </div>`;
+    }).join('');
+    wrap.querySelectorAll('[data-admindel]').forEach(b=>{
+      b.onclick = ()=> adminDeleteCard(b.getAttribute('data-admindel'));
+    });
+  }
+  async function adminDeleteCard(id){
+    const c = state.cards.find(x=>x.id===id);
+    if(!c) return;
+    if(!confirm(`Apagar "${c.subject}" da conta de ${profileName(c.ownerId)}?`)) return;
+    const {error} = await supa.from('cards').delete().eq('id', id);
+    if(error){ console.error(error); toast('Não deu pra apagar.'); return; }
+    state.cards = state.cards.filter(x=>x.id!==id);
+    render();
+    renderAdminCardSearch();
+    toast('Assunto removido.');
+  }
+
   async function importarEdital(){
     const {data: existing, error} = await supa.from('cards').select('subject').eq('owner_id', state.me.id);
     if(error){ console.error(error); toast('Não deu pra conferir seus assuntos.'); return; }
@@ -918,6 +1001,7 @@
     const nm = state.myProfile.display_name || state.myProfile.username;
     el('hdAv').textContent = initials(nm);
     el('hdAv').style.background = avColor(nm);
+    el('btnAdminPanel').hidden = !state.myProfile.is_admin;
   }
 
   async function boot(){
@@ -1366,8 +1450,6 @@
     el('hdAv').onclick=()=>{
       el('accUser').textContent = '@'+(state.myProfile && state.myProfile.username);
       el('accName').value = (state.myProfile && state.myProfile.display_name) || '';
-      el('adminZone').hidden = !(state.myProfile && state.myProfile.is_admin);
-      el('adminUser').value=''; el('adminCodeResult').textContent='';
       renderPomodoroSessions();
       el('accModal').hidden=false;
     };
@@ -1384,6 +1466,15 @@
       state.myProfile = data; renderHeaderUser(); render();
       toast('Nome atualizado.');
     };
+
+    // painel admin
+    el('btnAdminPanel').onclick=()=>{
+      el('adminUser').value=''; el('adminCodeResult').textContent='';
+      el('adminCardSearch').value=''; el('adminCardList').innerHTML='<span class="hint">digite algo para buscar</span>';
+      el('adminDelUser').value='';
+      el('adminModal').hidden=false;
+    };
+    el('cancelAdmin').onclick=()=> el('adminModal').hidden=true;
     el('btnGenAdminCode').onclick=async ()=>{
       const u = normUser(el('adminUser').value);
       if(!u){ el('adminUser').focus(); return; }
@@ -1393,6 +1484,31 @@
       if(error){ console.error(error); el('adminCodeResult').textContent = error.message||'Não foi possível gerar o código.'; return; }
       el('adminCodeResult').innerHTML = `Código para <b>${esc(u)}</b>: <span class="mono">${esc(data)}</span> (válido 24h). Entregue por fora do sistema.`;
     };
+    el('adminCardSearch').addEventListener('input', renderAdminCardSearch);
+    el('btnAdminDeleteUser').onclick=async ()=>{
+      const u = normUser(el('adminDelUser').value);
+      if(!u){ el('adminDelUser').focus(); return; }
+      if(!confirm(`Excluir a conta "${u}" e todos os dados dela? Não tem como desfazer.`)) return;
+      if(!confirm('Confirmando de novo: tem certeza?')) return;
+      el('btnAdminDeleteUser').disabled=true;
+      const {error} = await supa.rpc('admin_delete_user', {p_username:u});
+      el('btnAdminDeleteUser').disabled=false;
+      if(error){ console.error(error); toast(error.message||'Não deu pra excluir essa conta.'); return; }
+      el('adminDelUser').value='';
+      await refresh();
+      toast('Conta excluída.');
+    };
+    el('btnResetRoom').onclick=async ()=>{
+      if(!confirm('Isso apaga TODOS os assuntos de TODAS as contas da sala. Contas e logins continuam. Tem certeza?')) return;
+      if(!confirm('Confirmando de novo: não tem como desfazer. Apagar tudo?')) return;
+      el('btnResetRoom').disabled=true;
+      const {error} = await supa.from('cards').delete().neq('id','');
+      el('btnResetRoom').disabled=false;
+      if(error){ console.error(error); toast('Não deu pra resetar a sala.'); return; }
+      await refresh();
+      toast('Sala resetada.');
+    };
+
     el('btnLogout').onclick=async ()=>{
       if(!confirm('Sair da conta?')) return;
       await supa.auth.signOut();

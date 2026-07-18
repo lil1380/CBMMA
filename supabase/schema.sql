@@ -23,6 +23,7 @@
 create extension if not exists pgcrypto;
 
 drop function if exists public.delete_my_account();
+drop function if exists public.admin_delete_user(text);
 drop function if exists public.reset_password_with_code(text, text, text);
 drop function if exists public.reset_password_with_admin_code(text, text, text);
 drop function if exists public.admin_generate_reset_code(text);
@@ -71,6 +72,8 @@ create policy "cards select all logados" on public.cards for select to authentic
 create policy "cards insert own" on public.cards for insert to authenticated with check (owner_id = auth.uid());
 create policy "cards update own" on public.cards for update to authenticated using (owner_id = auth.uid());
 create policy "cards delete own" on public.cards for delete to authenticated using (owner_id = auth.uid());
+create policy "cards delete admin" on public.cards for delete to authenticated
+  using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin));
 
 -- Config da sala (nome, data da prova) — uma linha só.
 create table public.config (
@@ -272,6 +275,36 @@ begin
 end;
 $$;
 grant execute on function public.delete_my_account() to authenticated;
+
+-- Admin exclui a conta de outra pessoa (nunca a própria — use delete_my_account).
+create or replace function public.admin_delete_user(p_username text)
+returns void
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  v_is_admin boolean;
+  v_target uuid;
+begin
+  select is_admin into v_is_admin from public.profiles where id = auth.uid();
+  if not coalesce(v_is_admin, false) then
+    raise exception 'Apenas administradores podem excluir contas de outras pessoas.';
+  end if;
+
+  select id into v_target from public.profiles where username = lower(trim(p_username));
+  if v_target is null then
+    raise exception 'Usuário não encontrado.';
+  end if;
+
+  if v_target = auth.uid() then
+    raise exception 'Use "Excluir minha conta" para apagar a própria conta.';
+  end if;
+
+  delete from auth.users where id = v_target;
+end;
+$$;
+grant execute on function public.admin_delete_user(text) to authenticated;
 
 -- Depois de rodar este script e criar sua conta pelo site, torne-se admin
 -- rodando (troque 'seu_usuario' pelo usuário que você escolheu):
