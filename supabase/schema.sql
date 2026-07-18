@@ -47,7 +47,12 @@ create table public.profiles (
   last_active_date date,
   focus_minutes numeric not null default 0,
   focus_cycles int not null default 0,
-  last_seen bigint not null default 0
+  last_seen bigint not null default 0,
+  daily_goal_type text not null default 'subjects' check (daily_goal_type in ('subjects','time')),
+  daily_goal_value numeric not null default 3,
+  daily_day date,
+  daily_subjects_done int not null default 0,
+  daily_minutes numeric not null default 0
 );
 alter table public.profiles enable row level security;
 create policy "profiles select all logados" on public.profiles for select to authenticated using (true);

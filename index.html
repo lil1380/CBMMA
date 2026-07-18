@@ -97,6 +97,13 @@
   .mystat .v{font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:600;font-size:18px;margin-top:2px}
   .mystat.streak .v{color:var(--amber)}
   .mystat.rev .v{color:var(--lilac)}
+  .daily-goal{margin-top:12px;padding-top:12px;border-top:1px solid var(--line-soft)}
+  .dg-head{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--muted);margin-bottom:7px}
+  .mini-edit{background:none;border:none;color:var(--faint);font-size:12px;padding:2px;cursor:pointer}
+  .mini-edit:hover{color:var(--ink)}
+  .dg-bar{height:8px;background:var(--bg);border:1px solid var(--line);border-radius:20px;overflow:hidden;margin-bottom:6px}
+  .dg-bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--amber),#f2c072);border-radius:20px;transition:width .5s ease}
+  .dg-txt{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;color:var(--muted)}
   .rank{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
   .rank-row{display:flex;align-items:center;gap:9px;padding:6px 0;border-bottom:1px solid var(--line-soft);font-size:13px}
   .rank-row:last-child{border-bottom:none}
@@ -387,6 +394,14 @@
         <div class="mystat streak"><div class="k">Sequência</div><div class="v" id="myStreak">0d</div></div>
         <div class="mystat"><div class="k">Foco total</div><div class="v" id="myFocus">0min</div></div>
       </div>
+      <div class="daily-goal">
+        <div class="dg-head">
+          <span>Meta do dia</span>
+          <button class="mini-edit" id="btnEditGoal" title="Editar meta">✎</button>
+        </div>
+        <div class="dg-bar"><i id="dgFill"></i></div>
+        <div class="dg-txt" id="dgTxt">—</div>
+      </div>
     </div>
     <div class="rank">
       <h3>Quem mais estudou</h3>
@@ -488,7 +503,7 @@
 
     <section class="auth-pane" id="paneLogin">
       <div class="fx"><label for="loginUser">Usuário</label>
-        <input id="loginUser" autocomplete="username" maxlength="24" placeholder="ex: lilian" /></div>
+        <input id="loginUser" autocomplete="username" maxlength="24" placeholder="ex: usuario123" /></div>
       <div class="fx"><label for="loginPass">Senha</label>
         <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••" /></div>
       <button class="btn-block" id="btnLogin">Entrar na prontidão</button>
@@ -522,7 +537,7 @@
     <section class="auth-pane" id="paneForgot" hidden>
       <p class="lead">Informe seu usuário e um dos 5 códigos de recuperação que você guardou no cadastro.</p>
       <div class="fx"><label for="fgUser">Usuário</label>
-        <input id="fgUser" autocomplete="username" maxlength="24" placeholder="ex: lilian" /></div>
+        <input id="fgUser" autocomplete="username" maxlength="24" placeholder="ex: usuario123" /></div>
       <div class="fx"><label for="fgCode">Código de recuperação</label>
         <input id="fgCode" maxlength="9" placeholder="XXXX-XXXX" style="text-transform:uppercase" /></div>
       <div class="fx"><label for="fgPass">Nova senha</label>
@@ -534,7 +549,7 @@
     <section class="auth-pane" id="paneAdminReset" hidden>
       <p class="lead">Informe seu usuário e o código temporário que o administrador da sala te passou.</p>
       <div class="fx"><label for="arUser">Usuário</label>
-        <input id="arUser" autocomplete="username" maxlength="24" placeholder="ex: lilian" /></div>
+        <input id="arUser" autocomplete="username" maxlength="24" placeholder="ex: usuario123" /></div>
       <div class="fx"><label for="arCode">Código do administrador</label>
         <input id="arCode" maxlength="12" placeholder="código temporário" style="text-transform:uppercase" /></div>
       <div class="fx"><label for="arPass">Nova senha</label>
@@ -591,7 +606,7 @@
       <p class="hint">Válido por 24h. Entregue fora do sistema (WhatsApp, presencial).</p>
       <div class="field">
         <label for="adminUser">Usuário da pessoa</label>
-        <input id="adminUser" autocomplete="off" maxlength="24" placeholder="ex: lilian" />
+        <input id="adminUser" autocomplete="off" maxlength="24" placeholder="ex: usuario123" />
       </div>
       <button class="btn-ghost" id="btnGenAdminCode" style="width:100%">Gerar código de reset</button>
       <div class="hint" id="adminCodeResult" style="margin-top:8px"></div>
@@ -666,6 +681,29 @@
     <div class="modal-actions">
       <button class="btn-primary" id="saveSet">Salvar</button>
       <button class="btn-ghost" id="cancelSet">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Meta do dia -->
+<div class="veil" id="goalModal" hidden>
+  <div class="modal">
+    <h3>Meta do dia</h3>
+    <p>Escolha como quer acompanhar sua meta diária. É só sua.</p>
+    <div class="field">
+      <label for="goalType">Tipo de meta</label>
+      <select id="goalType">
+        <option value="subjects">Quantidade de assuntos</option>
+        <option value="time">Tempo de estudo (pomodoro)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="goalValue" id="goalValueLabel">Assuntos por dia</label>
+      <input id="goalValue" type="number" min="1" max="600" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-primary" id="saveGoal">Salvar meta</button>
+      <button class="btn-ghost" id="cancelGoal">Cancelar</button>
     </div>
   </div>
 </div>
@@ -1036,7 +1074,10 @@
     render();
   }
 
-  async function touchActivity(deltaMinutes, deltaCycles){
+  // opts: {minutes, cycles, subjects} — cada um opcional, soma no total geral
+  // e também no contador do dia (que zera sozinho quando muda o dia).
+  async function touchActivity(opts){
+    opts = opts || {};
     if(!state.me || !state.myProfile) return;
     const p = state.myProfile;
     const today = todayStr();
@@ -1046,10 +1087,15 @@
       streak = (lastActive === todayStr(y)) ? streak+1 : 1;
       lastActive = today;
     }
+    let dailyDay = p.daily_day, dailySubjects = p.daily_subjects_done||0, dailyMinutes = p.daily_minutes||0;
+    if(dailyDay !== today){ dailyDay = today; dailySubjects = 0; dailyMinutes = 0; }
+    dailySubjects += (opts.subjects||0);
+    dailyMinutes += (opts.minutes||0);
     const patch = {
       streak, last_active_date: lastActive,
-      focus_minutes: (p.focus_minutes||0) + (deltaMinutes||0),
-      focus_cycles: (p.focus_cycles||0) + (deltaCycles||0)
+      focus_minutes: (p.focus_minutes||0) + (opts.minutes||0),
+      focus_cycles: (p.focus_cycles||0) + (opts.cycles||0),
+      daily_day: dailyDay, daily_subjects_done: dailySubjects, daily_minutes: dailyMinutes
     };
     state.myProfile = Object.assign({}, p, patch);
     renderMyPanel();
@@ -1081,13 +1127,13 @@
       <div class="pomo-row">
         <span class="pm">${Math.round(r.minutes)}min</span>
         <span class="pd">${fmtWhen(r.completed_at)}</span>
-        <button class="pdel" data-delpomo="${r.id}" data-min="${r.minutes}" title="Não cumpri esse tempo">Excluir</button>
+        <button class="pdel" data-delpomo="${r.id}" data-min="${r.minutes}" data-at="${r.completed_at}" title="Não cumpri esse tempo">Excluir</button>
       </div>`).join('');
     wrap.querySelectorAll('[data-delpomo]').forEach(b=>{
-      b.onclick = ()=> deletePomodoroSession(b.getAttribute('data-delpomo'), Number(b.getAttribute('data-min')));
+      b.onclick = ()=> deletePomodoroSession(b.getAttribute('data-delpomo'), Number(b.getAttribute('data-min')), Number(b.getAttribute('data-at')));
     });
   }
-  async function deletePomodoroSession(id, minutes){
+  async function deletePomodoroSession(id, minutes, completedAt){
     if(!confirm('Remover essa sessão de foco? O tempo será descontado das suas estatísticas.')) return;
     const {error} = await supa.from('pomodoro_sessions').delete().eq('id', id);
     if(error){ console.error(error); toast('Não deu pra remover.'); return; }
@@ -1096,6 +1142,9 @@
       focus_minutes: Math.max(0, (p.focus_minutes||0) - minutes),
       focus_cycles: Math.max(0, (p.focus_cycles||0) - 1)
     };
+    if(completedAt && todayStr(new Date(completedAt)) === todayStr()){
+      patch.daily_minutes = Math.max(0, (p.daily_minutes||0) - minutes);
+    }
     const {data, error:err2} = await supa.from('profiles').update(patch).eq('id', state.me.id).select().single();
     if(!err2) state.myProfile = data; else console.error(err2);
     renderMyPanel();
@@ -1216,6 +1265,20 @@
     return p ? p.display_name : '—';
   }
 
+  function renderDailyGoal(){
+    const p = state.myProfile;
+    if(!p) return;
+    const isToday = p.daily_day === todayStr();
+    const type = p.daily_goal_type || 'subjects';
+    const goalVal = Number(p.daily_goal_value) || (type==='time' ? 60 : 3);
+    const progress = isToday ? (type==='time' ? Number(p.daily_minutes)||0 : p.daily_subjects_done||0) : 0;
+    const pct = Math.min(100, Math.round(progress/goalVal*100));
+    el('dgFill').style.width = pct+'%';
+    el('dgTxt').textContent = type==='time'
+      ? Math.round(progress)+'/'+Math.round(goalVal)+' min hoje'
+      : Math.round(progress)+'/'+Math.round(goalVal)+' assuntos hoje';
+  }
+
   function renderMyPanel(){
     // conta concluídos/revisões por dono, a partir dos próprios cards (visíveis a todos)
     const byUser = new Map();
@@ -1239,6 +1302,7 @@
       el('myStreak').textContent = (state.myProfile.streak||0)+'d';
       el('myFocus').textContent = fmtMin(state.myProfile.focus_minutes||0);
     }
+    renderDailyGoal();
 
     const ranked = [...byUser.values()].filter(e=>scoreOf(e)>0 || (e.focusMinutes||0)>0)
       .sort((a,b)=> scoreOf(b)-scoreOf(a) || (b.focusMinutes||0)-(a.focusMinutes||0)).slice(0,6);
@@ -1337,7 +1401,7 @@
     if(to==='done') toast(wasReviewCompletion ? 'Revisão concluída — mandou bem! 🎯' : 'Assunto concluído — mandou bem! 🎯');
     if(to==='doing') toast('Bom estudo! Foco total. 🔥');
     if(to==='review') toast('Marcado para revisão. Volte quando quiser reforçar. 🔁');
-    if(to==='doing' || to==='done') touchActivity(0,0);
+    if(to==='doing' || to==='done') touchActivity({subjects: to==='done'?1:0});
   }
 
   async function deleteCard(id){
@@ -1448,6 +1512,32 @@
       applyConfig(); el('setModal').hidden=true; toast('Ajustes salvos para a sala.');
     };
 
+    // meta do dia
+    const updateGoalValueLabel=()=>{
+      el('goalValueLabel').textContent = el('goalType').value==='time' ? 'Minutos por dia' : 'Assuntos por dia';
+    };
+    el('btnEditGoal').onclick=()=>{
+      const p = state.myProfile || {};
+      const type = p.daily_goal_type || 'subjects';
+      el('goalType').value = type;
+      el('goalValue').value = p.daily_goal_value || (type==='time'?60:3);
+      updateGoalValueLabel();
+      el('goalModal').hidden=false;
+    };
+    el('goalType').addEventListener('change', updateGoalValueLabel);
+    el('cancelGoal').onclick=()=> el('goalModal').hidden=true;
+    el('saveGoal').onclick=async ()=>{
+      const type = el('goalType').value;
+      const val = Math.max(1, parseInt(el('goalValue').value)||(type==='time'?60:3));
+      const {data, error} = await supa.from('profiles')
+        .update({daily_goal_type:type, daily_goal_value:val}).eq('id', state.me.id).select().single();
+      if(error){ console.error(error); toast('Não deu pra salvar a meta.'); return; }
+      state.myProfile = data;
+      renderDailyGoal();
+      el('goalModal').hidden=true;
+      toast('Meta do dia atualizada.');
+    };
+
     // minha conta
     el('hdAv').onclick=()=>{
       el('accUser').textContent = '@'+(state.myProfile && state.myProfile.username);
@@ -1552,7 +1642,7 @@
       left--;
       if(left<0){
         if(mode==='focus'){
-          await touchActivity(dur.focus/60, 1);
+          await touchActivity({minutes: dur.focus/60, cycles: 1});
           await logPomodoroSession(dur.focus/60);
           mode='break'; left=dur.break; toast('Ciclo de foco concluído. Respira 5 min. ☕');
         } else { mode='focus'; left=dur.focus; toast('Pausa acabou. De volta ao foco! 🔥'); }
