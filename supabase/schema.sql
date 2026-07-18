@@ -54,6 +54,10 @@ create policy "profiles select all logados" on public.profiles for select to aut
 create policy "profiles insert own" on public.profiles for insert to authenticated with check (id = auth.uid());
 create policy "profiles update own" on public.profiles for update to authenticated using (id = auth.uid());
 create policy "profiles delete own" on public.profiles for delete to authenticated using (id = auth.uid());
+-- RLS só controla linha, não coluna: sem isto, qualquer pessoa logada
+-- poderia editar a própria is_admin direto pela API e virar administrador.
+revoke update (is_admin) on public.profiles from authenticated;
+revoke insert (is_admin) on public.profiles from authenticated;
 
 -- Assuntos do quadro. Visíveis a todos os logados; só o dono cria/move/apaga.
 create table public.cards (
