@@ -291,6 +291,9 @@
   .auth-link{background:none;border:none;color:var(--muted);font-size:12px;text-decoration:underline;
     padding:4px 0;display:block;margin-top:12px}
   .auth-link:hover{color:var(--ink)}
+  .auth-remember{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);
+    margin:2px 0 4px;cursor:pointer;user-select:none}
+  .auth-remember input{width:15px;height:15px;accent-color:var(--red);cursor:pointer}
   .auth-foot{font-size:11px;color:var(--faint);line-height:1.5;border-top:1px solid var(--line-soft);
     padding-top:12px;margin-top:16px}
   .auth-foot b{color:var(--muted)}
@@ -509,6 +512,7 @@
         <input id="loginUser" autocomplete="username" maxlength="24" placeholder="ex: usuario123" /></div>
       <div class="fx"><label for="loginPass">Senha</label>
         <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••" /></div>
+      <label class="auth-remember"><input type="checkbox" id="loginRemember" checked /> Manter conectado neste dispositivo</label>
       <button class="btn-block" id="btnLogin">Entrar na prontidão</button>
       <button class="auth-link" id="btnForgot">Esqueci minha senha</button>
       <button class="auth-link" id="btnHaveAdminCode">Tenho um código do administrador</button>
@@ -721,7 +725,23 @@
   /* ---------------- Supabase client ---------------- */
   const SB_URL = 'https://jdyaglgtcqjypnwfjwar.supabase.co';
   const SB_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkeWFnbGd0Y3FqeXBud2Zqd2FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMjEwODYsImV4cCI6MjA5OTg5NzA4Nn0.XAeP_7CL4Ot9RE1d6vwYSFvK3WWh45vFD4XJSLnTE94';
-  const supa = window.supabase.createClient(SB_URL, SB_ANON_KEY);
+  // "Manter conectado": quando marcado, a sessão vai pro localStorage (sobrevive
+  // a fechar o navegador); quando desmarcado, vai pro sessionStorage (some ao
+  // fechar a aba/navegador) — bom pra computador compartilhado.
+  const REMEMBER_KEY = 'sala:remember';
+  const getRemember = ()=> localStorage.getItem(REMEMBER_KEY) !== '0';
+  const setRemember = (v)=> localStorage.setItem(REMEMBER_KEY, v ? '1' : '0');
+  const hybridStorage = {
+    getItem: (key)=> localStorage.getItem(key) ?? sessionStorage.getItem(key),
+    setItem: (key, value)=>{
+      if(getRemember()){ localStorage.setItem(key, value); sessionStorage.removeItem(key); }
+      else { sessionStorage.setItem(key, value); localStorage.removeItem(key); }
+    },
+    removeItem: (key)=>{ localStorage.removeItem(key); sessionStorage.removeItem(key); }
+  };
+  const supa = window.supabase.createClient(SB_URL, SB_ANON_KEY, {
+    auth: { storage: hybridStorage, persistSession: true, autoRefreshToken: true }
+  });
 
   function rowToCard(r){
     return {
@@ -804,6 +824,7 @@
     clearAuthMsg();
     const user=normUser(el('loginUser').value), pass=el('loginPass').value;
     if(!user||!pass){ showAuthMsg('Preencha usuário e senha.'); return; }
+    setRemember(el('loginRemember').checked);
     el('btnLogin').disabled=true;
     const {error} = await supa.auth.signInWithPassword({email:usernameEmail(user), password:pass});
     el('btnLogin').disabled=false;
@@ -815,6 +836,7 @@
     const nome=el('suNome').value.trim();
     const user=normUser(el('suUser').value);
     const pass=el('suPass').value;
+    setRemember(true);
     if(!nome){ showAuthMsg('Informe seu nome de guerra.'); return; }
     const vu=validaUsuario(user); if(!vu.ok){ showAuthMsg(vu.msg); return; }
     if(pass.length<8){ showAuthMsg('A senha precisa ter no mínimo 8 caracteres.'); return; }
