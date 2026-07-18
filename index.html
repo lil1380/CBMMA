@@ -243,8 +243,11 @@
   .auth-foot{font-size:11px;color:var(--faint);line-height:1.5;border-top:1px solid var(--line-soft);
     padding-top:12px;margin-top:16px}
   .auth-foot b{color:var(--muted)}
+  .codes-list{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:4px}
+  .codes-list .code{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;
+    text-align:center;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:15px;letter-spacing:.04em}
   .danger-zone{border:1px solid rgba(216,35,47,.4);background:rgba(216,35,47,.08);border-radius:9px;
-    padding:14px;margin-top:6px}
+    padding:14px;margin-top:6px;margin-bottom:14px}
   .danger-zone h4{margin:0 0 6px;font-size:12.5px;color:#f0a6ab;text-transform:uppercase;letter-spacing:.06em}
   .danger-zone p{margin:0 0 12px;font-size:12px;color:var(--muted);line-height:1.5}
   .btn-danger{width:100%;background:transparent;border:1px solid var(--red);color:#f0a6ab;border-radius:8px;
@@ -398,39 +401,60 @@
     <div class="auth-msg" id="authMsg"></div>
 
     <section class="auth-pane" id="paneLogin">
-      <div class="fx"><label for="loginEmail">E-mail</label>
-        <input id="loginEmail" type="email" autocomplete="username" placeholder="voce@email.com" /></div>
+      <div class="fx"><label for="loginUser">Usuário</label>
+        <input id="loginUser" autocomplete="username" maxlength="24" placeholder="ex: lilian" /></div>
       <div class="fx"><label for="loginPass">Senha</label>
         <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••" /></div>
       <button class="btn-block" id="btnLogin">Entrar na prontidão</button>
       <button class="auth-link" id="btnForgot">Esqueci minha senha</button>
+      <button class="auth-link" id="btnHaveAdminCode">Tenho um código do administrador</button>
     </section>
 
     <section class="auth-pane" id="paneSignup" hidden>
       <div class="fx"><label for="suNome">Nome de guerra</label>
         <input id="suNome" maxlength="30" autocomplete="name" placeholder="ex: Lílian" /></div>
-      <div class="fx"><label for="suEmail">E-mail</label>
-        <input id="suEmail" type="email" autocomplete="username" placeholder="voce@email.com" /></div>
+      <div class="fx"><label for="suUser">Usuário</label>
+        <input id="suUser" autocomplete="username" maxlength="24" placeholder="mínimo 3 caracteres, sem espaços" /></div>
       <div class="fx"><label for="suPass">Senha</label>
         <input id="suPass" type="password" autocomplete="new-password" placeholder="mínimo 8 caracteres" />
         <div class="hint">Mínimo 8 caracteres.</div></div>
-      <button class="btn-block" id="btnSignup">Criar conta e entrar</button>
-      <div class="auth-foot">Usamos seu e-mail só pra login e pra recuperar sua senha se você esquecer. Sem chat, sem notificações.</div>
+      <button class="btn-block" id="btnSignup">Criar conta</button>
+      <div class="auth-foot">Não pedimos e-mail. Depois de criar a conta você recebe 5 códigos de recuperação — guarde-os, são a única forma de recuperar a senha sozinho(a) se esquecer.</div>
+    </section>
+
+    <section class="auth-pane" id="paneCodes" hidden>
+      <h3>Guarde seus códigos de recuperação</h3>
+      <p class="lead">Cada código só funciona <b>uma vez</b>. Use um deles se esquecer sua senha. Essa é a única vez que eles aparecem na tela.</p>
+      <div id="codesList" class="codes-list"></div>
+      <div class="modal-actions" style="margin:14px 0">
+        <button class="btn-ghost" id="btnCopyCodes" style="flex:1">Copiar códigos</button>
+        <button class="btn-ghost" id="btnDownloadCodes" style="flex:1">Baixar .txt</button>
+      </div>
+      <button class="btn-block" id="btnCodesDone">Já guardei — entrar na sala</button>
     </section>
 
     <section class="auth-pane" id="paneForgot" hidden>
-      <p class="lead">Informe o e-mail da sua conta. Vamos mandar um link pra você criar uma senha nova.</p>
-      <div class="fx"><label for="fgEmail">E-mail</label>
-        <input id="fgEmail" type="email" autocomplete="username" placeholder="voce@email.com" /></div>
-      <button class="btn-block" id="btnForgotSend">Enviar link de redefinição</button>
+      <p class="lead">Informe seu usuário e um dos 5 códigos de recuperação que você guardou no cadastro.</p>
+      <div class="fx"><label for="fgUser">Usuário</label>
+        <input id="fgUser" autocomplete="username" maxlength="24" placeholder="ex: lilian" /></div>
+      <div class="fx"><label for="fgCode">Código de recuperação</label>
+        <input id="fgCode" maxlength="9" placeholder="XXXX-XXXX" style="text-transform:uppercase" /></div>
+      <div class="fx"><label for="fgPass">Nova senha</label>
+        <input id="fgPass" type="password" autocomplete="new-password" placeholder="mínimo 8 caracteres" /></div>
+      <button class="btn-block" id="btnForgotSend">Trocar senha</button>
       <button class="auth-link" id="btnForgotBack">Voltar para o login</button>
     </section>
 
-    <section class="auth-pane" id="paneReset" hidden>
-      <p class="lead">Defina sua nova senha.</p>
-      <div class="fx"><label for="rsPass">Nova senha</label>
-        <input id="rsPass" type="password" autocomplete="new-password" placeholder="mínimo 8 caracteres" /></div>
-      <button class="btn-block" id="btnResetSave">Salvar nova senha</button>
+    <section class="auth-pane" id="paneAdminReset" hidden>
+      <p class="lead">Informe seu usuário e o código temporário que o administrador da sala te passou.</p>
+      <div class="fx"><label for="arUser">Usuário</label>
+        <input id="arUser" autocomplete="username" maxlength="24" placeholder="ex: lilian" /></div>
+      <div class="fx"><label for="arCode">Código do administrador</label>
+        <input id="arCode" maxlength="12" placeholder="código temporário" style="text-transform:uppercase" /></div>
+      <div class="fx"><label for="arPass">Nova senha</label>
+        <input id="arPass" type="password" autocomplete="new-password" placeholder="mínimo 8 caracteres" /></div>
+      <button class="btn-block" id="btnAdminResetSend">Trocar senha</button>
+      <button class="auth-link" id="btnAdminResetBack">Voltar para o login</button>
     </section>
   </div>
 </div>
@@ -439,7 +463,7 @@
 <div class="veil" id="accModal" hidden>
   <div class="modal">
     <h3>Minha conta</h3>
-    <p>Logado como <b id="accEmail">—</b></p>
+    <p>Logado como <b id="accUser">—</b></p>
     <div class="field">
       <label for="accName">Nome de guerra</label>
       <input id="accName" maxlength="30" autocomplete="name" />
@@ -448,6 +472,18 @@
       <button class="btn-primary" id="accSaveName">Salvar nome</button>
       <button class="btn-ghost" id="btnLogout">Sair</button>
     </div>
+
+    <div class="danger-zone" id="adminZone" hidden>
+      <h4>Administração</h4>
+      <p>Gere um código de reset de senha válido por 24h para outra pessoa da sala. Entregue o código fora do sistema (WhatsApp, presencial).</p>
+      <div class="field">
+        <label for="adminUser">Usuário da pessoa</label>
+        <input id="adminUser" autocomplete="off" maxlength="24" placeholder="ex: lilian" />
+      </div>
+      <button class="btn-ghost" id="btnGenAdminCode" style="width:100%">Gerar código de reset</button>
+      <div class="hint" id="adminCodeResult" style="margin-top:8px"></div>
+    </div>
+
     <div class="danger-zone">
       <h4>Zona de risco</h4>
       <p>Apaga sua conta, seus assuntos e suas estatísticas para sempre. Não tem como desfazer.</p>
@@ -528,8 +564,35 @@
   const state = { me:null, myProfile:null, cards:[], profiles:[],
     cfg:{sala:'Sala CBM-MA', date:'2026-10-18'}, filter:'all' };
   let appIniciado = false;
-  let pendingDisplayName = null;
+  let pendingDisplayName = null, pendingUsername = null, pendingCodesPlain = null;
+  let awaitingCodesAck = false;
   let loopTimer=null, hbTimer=null, cdTimer=null;
+
+  /* ---------------- criptografia leve no navegador ---------------- */
+  async function sha256Hex(text){
+    const bytes = new TextEncoder().encode(text);
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  function randomSalt(){
+    const a = new Uint8Array(16); crypto.getRandomValues(a);
+    return Array.from(a).map(b=>b.toString(16).padStart(2,'0')).join('');
+  }
+  const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem O,0,I,1
+  function genRecoveryCode(){
+    const bytes = new Uint8Array(8); crypto.getRandomValues(bytes);
+    let s=''; for(let i=0;i<8;i++) s += CODE_ALPHABET[bytes[i] % CODE_ALPHABET.length];
+    return s.slice(0,4)+'-'+s.slice(4);
+  }
+  const normUser = (v)=> (v||'').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,'');
+  function validaUsuario(u){
+    if(!u) return {ok:false,msg:'Informe um usuário.'};
+    if(u.length<3) return {ok:false,msg:'Usuário precisa ter no mínimo 3 caracteres.'};
+    if(u.length>24) return {ok:false,msg:'Usuário muito longo (máx. 24).'};
+    if(!/^[a-z0-9._-]+$/.test(u)) return {ok:false,msg:'Use só letras, números, ponto, hífen ou _.'};
+    return {ok:true,msg:''};
+  }
+  const usernameEmail = (u)=> u+'@sala.local';
 
   /* ---------------- catálogo de sugestões (CBM-MA) ---------------- */
   const CATALOG = [
@@ -548,10 +611,9 @@
   /* ---------------- autenticação ---------------- */
   function traduzErro(err){
     const m=(err&&err.message)||'';
-    if(/Invalid login credentials/i.test(m)) return 'E-mail ou senha incorretos.';
-    if(/User already registered/i.test(m)) return 'Este e-mail já tem uma conta. Tente entrar.';
+    if(/Invalid login credentials/i.test(m)) return 'Usuário ou senha incorretos.';
+    if(/User already registered/i.test(m)) return 'Este usuário já existe. Tente entrar.';
     if(/Password should be at least/i.test(m)) return 'A senha precisa ter no mínimo 8 caracteres.';
-    if(/Unable to validate email address/i.test(m)) return 'E-mail inválido.';
     if(/rate limit/i.test(m)) return 'Muitas tentativas. Aguarde um pouco e tente de novo.';
     return m || 'Algo deu errado. Tente de novo.';
   }
@@ -559,70 +621,141 @@
     const m=el('authMsg'); m.textContent=text; m.className='auth-msg show '+(kind==='good'?'good':'bad');
   }
   function clearAuthMsg(){ el('authMsg').className='auth-msg'; el('authMsg').textContent=''; }
-  const AUTH_PANES = {login:'paneLogin', signup:'paneSignup', forgot:'paneForgot', reset:'paneReset'};
+  const AUTH_PANES = {login:'paneLogin', signup:'paneSignup', codes:'paneCodes', forgot:'paneForgot', adminreset:'paneAdminReset'};
   function showAuthPane(pane){
     Object.entries(AUTH_PANES).forEach(([k,id])=> el(id).hidden = (k!==pane));
-    el('authTabs').hidden = (pane==='forgot' || pane==='reset');
+    el('authTabs').hidden = (pane!=='login' && pane!=='signup');
     el('authTabs').querySelectorAll('[data-pane]').forEach(b=> b.classList.toggle('on', b.getAttribute('data-pane')===pane));
     clearAuthMsg();
   }
 
   async function fazerLogin(){
     clearAuthMsg();
-    const email=el('loginEmail').value.trim(), pass=el('loginPass').value;
-    if(!email||!pass){ showAuthMsg('Preencha e-mail e senha.'); return; }
+    const user=normUser(el('loginUser').value), pass=el('loginPass').value;
+    if(!user||!pass){ showAuthMsg('Preencha usuário e senha.'); return; }
     el('btnLogin').disabled=true;
-    const {error} = await supa.auth.signInWithPassword({email, password:pass});
+    const {error} = await supa.auth.signInWithPassword({email:usernameEmail(user), password:pass});
     el('btnLogin').disabled=false;
     if(error) showAuthMsg(traduzErro(error));
   }
+
   async function fazerCadastro(){
     clearAuthMsg();
-    const nome=el('suNome').value.trim(), email=el('suEmail').value.trim(), pass=el('suPass').value;
+    const nome=el('suNome').value.trim();
+    const user=normUser(el('suUser').value);
+    const pass=el('suPass').value;
     if(!nome){ showAuthMsg('Informe seu nome de guerra.'); return; }
-    if(!email){ showAuthMsg('Informe seu e-mail.'); return; }
+    const vu=validaUsuario(user); if(!vu.ok){ showAuthMsg(vu.msg); return; }
     if(pass.length<8){ showAuthMsg('A senha precisa ter no mínimo 8 caracteres.'); return; }
     el('btnSignup').disabled=true;
-    pendingDisplayName = nome;
-    const {data, error} = await supa.auth.signUp({email, password:pass, options:{data:{display_name:nome}}});
+    pendingDisplayName=nome; pendingUsername=user; awaitingCodesAck=true;
+    const {data, error} = await supa.auth.signUp({email:usernameEmail(user), password:pass,
+      options:{data:{display_name:nome, username:user}}});
     el('btnSignup').disabled=false;
-    if(error){ showAuthMsg(traduzErro(error)); return; }
-    if(data && data.user && !data.session){
-      showAuthMsg('Conta criada! Confira seu e-mail e clique no link de confirmação antes de entrar.', 'good');
+    if(error){ awaitingCodesAck=false; showAuthMsg(traduzErro(error)); return; }
+    if(!(data && data.session)){
+      awaitingCodesAck=false;
+      showAuthMsg('Não foi possível criar a conta. Confirme se "Confirm email" está desativado nas configurações de Authentication do Supabase.');
+      return;
     }
+    state.me = data.session.user;
+    await ensureOwnProfile();
+    await gerarMostrarCodigos();
   }
+
+  async function gerarMostrarCodigos(){
+    const codes = Array.from({length:5}, ()=> genRecoveryCode());
+    const rows = [];
+    for(const code of codes){
+      const salt = randomSalt();
+      const hash = await sha256Hex(salt+'::'+code);
+      rows.push({user_id: state.me.id, code_hash: hash, code_salt: salt});
+    }
+    const {error} = await supa.from('recovery_codes').insert(rows);
+    if(error){
+      console.error(error);
+      toast('Conta criada, mas não deu pra gerar os códigos de recuperação. Fale comigo.');
+      awaitingCodesAck=false;
+      await handleSignedIn({user: state.me});
+      return;
+    }
+    pendingCodesPlain = codes;
+    el('codesList').innerHTML = codes.map(c=>`<div class="code">${esc(c)}</div>`).join('');
+    showAuthPane('codes');
+  }
+
   async function fazerEsqueci(){
     clearAuthMsg();
-    const email=el('fgEmail').value.trim();
-    if(!email){ showAuthMsg('Informe seu e-mail.'); return; }
+    const user=normUser(el('fgUser').value);
+    const code=el('fgCode').value.trim();
+    const pass=el('fgPass').value;
+    if(!user||!code){ showAuthMsg('Preencha usuário e código.'); return; }
+    if(pass.length<8){ showAuthMsg('A nova senha precisa ter no mínimo 8 caracteres.'); return; }
     el('btnForgotSend').disabled=true;
-    const {error} = await supa.auth.resetPasswordForEmail(email, {redirectTo: location.origin+location.pathname});
+    const {data, error} = await supa.rpc('reset_password_with_code', {p_username:user, p_code:code, p_new_password:pass});
     el('btnForgotSend').disabled=false;
-    if(error){ showAuthMsg(traduzErro(error)); return; }
-    showAuthMsg('Se esse e-mail tiver uma conta, enviamos um link de redefinição. Confira sua caixa de entrada.', 'good');
+    if(error){ console.error(error); showAuthMsg('Algo deu errado. Tente de novo.'); return; }
+    if(!data){ showAuthMsg('Usuário ou código inválido, ou o código já foi usado.'); return; }
+    showAuthMsg('Senha alterada! Você já pode entrar com a nova senha.', 'good');
+    el('fgCode').value=''; el('fgPass').value='';
   }
-  async function fazerReset(){
+
+  async function fazerAdminReset(){
     clearAuthMsg();
-    const pass=el('rsPass').value;
-    if(pass.length<8){ showAuthMsg('A senha precisa ter no mínimo 8 caracteres.'); return; }
-    el('btnResetSave').disabled=true;
-    const {error} = await supa.auth.updateUser({password:pass});
-    el('btnResetSave').disabled=false;
-    if(error){ showAuthMsg(traduzErro(error)); return; }
-    toast('Senha atualizada!');
+    const user=normUser(el('arUser').value);
+    const code=el('arCode').value.trim();
+    const pass=el('arPass').value;
+    if(!user||!code){ showAuthMsg('Preencha usuário e código.'); return; }
+    if(pass.length<8){ showAuthMsg('A nova senha precisa ter no mínimo 8 caracteres.'); return; }
+    el('btnAdminResetSend').disabled=true;
+    const {data, error} = await supa.rpc('reset_password_with_admin_code', {p_username:user, p_code:code, p_new_password:pass});
+    el('btnAdminResetSend').disabled=false;
+    if(error){ console.error(error); showAuthMsg('Algo deu errado. Tente de novo.'); return; }
+    if(!data){ showAuthMsg('Usuário ou código inválido, expirado ou já usado.'); return; }
+    showAuthMsg('Senha alterada! Você já pode entrar com a nova senha.', 'good');
+    el('arCode').value=''; el('arPass').value='';
+  }
+
+  async function copyCodes(){
+    if(!pendingCodesPlain) return;
+    try{ await navigator.clipboard.writeText(pendingCodesPlain.join('\n')); toast('Códigos copiados.'); }
+    catch(e){ toast('Não deu pra copiar automaticamente — selecione manualmente.'); }
+  }
+  function downloadCodes(){
+    if(!pendingCodesPlain) return;
+    const txt = 'Sala de Estudos — códigos de recuperação\nUsuário: '+pendingUsername+'\n\n'
+      + pendingCodesPlain.join('\n') + '\n\nCada código só funciona uma vez. Guarde em lugar seguro.\n';
+    const blob = new Blob([txt], {type:'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'codigos-recuperacao-'+pendingUsername+'.txt';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+  async function confirmCodesSaved(){
+    awaitingCodesAck = false;
+    pendingCodesPlain = null;
+    const {data} = await supa.auth.getSession();
+    if(data && data.session) await handleSignedIn(data.session);
   }
 
   function wireAuthUI(){
     el('authTabs').querySelectorAll('[data-pane]').forEach(b=> b.onclick=()=> showAuthPane(b.getAttribute('data-pane')));
     el('btnForgot').onclick = ()=> showAuthPane('forgot');
     el('btnForgotBack').onclick = ()=> showAuthPane('login');
+    el('btnHaveAdminCode').onclick = ()=> showAuthPane('adminreset');
+    el('btnAdminResetBack').onclick = ()=> showAuthPane('login');
     el('btnLogin').onclick = fazerLogin;
     el('btnSignup').onclick = fazerCadastro;
     el('btnForgotSend').onclick = fazerEsqueci;
-    el('btnResetSave').onclick = fazerReset;
-    [['loginEmail',fazerLogin],['loginPass',fazerLogin],
-     ['suNome',fazerCadastro],['suEmail',fazerCadastro],['suPass',fazerCadastro],
-     ['fgEmail',fazerEsqueci],['rsPass',fazerReset]
+    el('btnAdminResetSend').onclick = fazerAdminReset;
+    el('btnCopyCodes').onclick = copyCodes;
+    el('btnDownloadCodes').onclick = downloadCodes;
+    el('btnCodesDone').onclick = confirmCodesSaved;
+    [['loginUser',fazerLogin],['loginPass',fazerLogin],
+     ['suNome',fazerCadastro],['suUser',fazerCadastro],['suPass',fazerCadastro],
+     ['fgUser',fazerEsqueci],['fgCode',fazerEsqueci],['fgPass',fazerEsqueci],
+     ['arUser',fazerAdminReset],['arCode',fazerAdminReset],['arPass',fazerAdminReset]
     ].forEach(([id,fn])=> el(id).addEventListener('keydown', e=>{ if(e.key==='Enter') fn(); }));
   }
 
@@ -630,11 +763,12 @@
     const {data, error} = await supa.from('profiles').select('*').eq('id', state.me.id).maybeSingle();
     if(error){ console.error(error); return; }
     if(data){ state.myProfile = data; return; }
-    const nome = pendingDisplayName || (state.me.user_metadata && state.me.user_metadata.display_name) || state.me.email.split('@')[0];
-    const {data:created, error:err2} = await supa.from('profiles').insert({id:state.me.id, display_name:nome}).select().single();
+    const nome = pendingDisplayName || (state.me.user_metadata && state.me.user_metadata.display_name) || 'Estudante';
+    const user = pendingUsername || (state.me.user_metadata && state.me.user_metadata.username) || (state.me.email||'').split('@')[0];
+    const {data:created, error:err2} = await supa.from('profiles').insert({id:state.me.id, username:user, display_name:nome}).select().single();
     if(err2){ console.error(err2); return; }
     state.myProfile = created;
-    pendingDisplayName = null;
+    pendingDisplayName = null; pendingUsername = null;
   }
 
   async function handleSignedIn(session){
@@ -661,15 +795,14 @@
     showAuthPane('login');
   }
   supa.auth.onAuthStateChange((event, session)=>{
-    if(event==='PASSWORD_RECOVERY'){ el('authVeil').hidden=false; showAuthPane('reset'); return; }
     if(event==='SIGNED_OUT'){ handleSignedOut(); return; }
-    if(session){ handleSignedIn(session); }
+    if(session && !awaitingCodesAck){ handleSignedIn(session); }
   });
 
   function renderHeaderUser(){
-    if(!state.me) return;
+    if(!state.me || !state.myProfile) return;
     el('hdUser').hidden = false;
-    const nm = (state.myProfile && state.myProfile.display_name) || state.me.email;
+    const nm = state.myProfile.display_name || state.myProfile.username;
     el('hdAv').textContent = initials(nm);
     el('hdAv').style.background = avColor(nm);
   }
@@ -1002,8 +1135,10 @@
 
     // minha conta
     el('hdAv').onclick=()=>{
-      el('accEmail').textContent = state.me.email;
+      el('accUser').textContent = '@'+(state.myProfile && state.myProfile.username);
       el('accName').value = (state.myProfile && state.myProfile.display_name) || '';
+      el('adminZone').hidden = !(state.myProfile && state.myProfile.is_admin);
+      el('adminUser').value=''; el('adminCodeResult').textContent='';
       el('accModal').hidden=false;
     };
     el('cancelAcc').onclick=()=> el('accModal').hidden=true;
@@ -1013,6 +1148,15 @@
       if(error){ console.error(error); toast('Não deu pra salvar o nome.'); return; }
       state.myProfile = data; renderHeaderUser(); render();
       toast('Nome atualizado.');
+    };
+    el('btnGenAdminCode').onclick=async ()=>{
+      const u = normUser(el('adminUser').value);
+      if(!u){ el('adminUser').focus(); return; }
+      el('btnGenAdminCode').disabled=true;
+      const {data, error} = await supa.rpc('admin_generate_reset_code', {p_username:u});
+      el('btnGenAdminCode').disabled=false;
+      if(error){ console.error(error); el('adminCodeResult').textContent = error.message||'Não foi possível gerar o código.'; return; }
+      el('adminCodeResult').innerHTML = `Código para <b>${esc(u)}</b>: <span class="mono">${esc(data)}</span> (válido 24h). Entregue por fora do sistema.`;
     };
     el('btnLogout').onclick=async ()=>{
       if(!confirm('Sair da conta?')) return;
