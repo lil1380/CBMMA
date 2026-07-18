@@ -104,6 +104,28 @@
   .rank-row .sc{font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;color:var(--muted);font-size:12px}
   .rank .none{color:var(--faint);font-size:12.5px;font-style:italic}
 
+  /* ---------- Mural da sala (bot + feed) ---------- */
+  .mural{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:18px}
+  .mural h3{font-family:"Oswald","Arial Narrow","Helvetica Neue",Arial,sans-serif;font-weight:600;text-transform:uppercase;
+    letter-spacing:.06em;font-size:13px;margin:0 0 12px;color:var(--muted)}
+  .bot-pin{display:flex;gap:10px;align-items:flex-start;background:var(--panel-2);border:1px solid var(--line);
+    border-radius:9px;padding:10px 11px;margin-bottom:12px}
+  .bot-av{width:30px;height:30px;flex:0 0 30px;border-radius:8px;background:linear-gradient(150deg,var(--red),var(--red-deep));
+    display:grid;place-items:center;font-size:15px}
+  .bot-line .nm{font-size:11.5px;font-weight:600;color:#f0a6ab;display:flex;align-items:center;gap:6px}
+  .bot-line .nm .tag{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:8.5px;letter-spacing:.08em;
+    background:rgba(216,35,47,.18);color:#f0a6ab;border-radius:4px;padding:1px 5px}
+  .bot-line .msg{font-size:13px;line-height:1.45;color:var(--ink);margin-top:3px}
+  .feed{display:flex;flex-direction:column;max-height:210px;overflow-y:auto;margin:0 -4px}
+  .fi{display:flex;gap:9px;align-items:flex-start;padding:7px 4px;border-bottom:1px solid var(--line-soft);font-size:12.5px}
+  .fi:last-child{border-bottom:none}
+  .fi .av{width:20px;height:20px;flex:0 0 20px;border-radius:50%;display:grid;place-items:center;font-size:9px;
+    font-weight:600;color:#0d1116;font-family:"IBM Plex Mono",ui-monospace,monospace;margin-top:1px}
+  .fi .tx{font-size:12.5px;line-height:1.4}
+  .fi .tx .subj{color:var(--green)}
+  .fi .tm{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:10px;color:var(--faint);margin-top:2px}
+  .feed-empty{font-size:12px;color:var(--faint);padding:8px 2px;line-height:1.5}
+
   /* ---------- Progress ---------- */
   .progress-row{display:flex;align-items:center;gap:14px;margin:0 0 20px;flex-wrap:wrap}
   .bar{flex:1;min-width:220px;height:10px;background:var(--panel);border:1px solid var(--line);
@@ -243,6 +265,13 @@
   .auth-foot{font-size:11px;color:var(--faint);line-height:1.5;border-top:1px solid var(--line-soft);
     padding-top:12px;margin-top:16px}
   .auth-foot b{color:var(--muted)}
+  .pomo-sessions{display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto}
+  .pomo-row{display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--line-soft);
+    border-radius:7px;padding:7px 9px;font-size:12.5px}
+  .pomo-row .pm{font-family:"IBM Plex Mono",ui-monospace,monospace;color:var(--muted)}
+  .pomo-row .pd{flex:1;color:var(--faint);font-size:11.5px}
+  .pomo-row .pdel{background:transparent;border:none;color:var(--faint);font-size:12px;padding:3px 6px}
+  .pomo-row .pdel:hover{color:var(--red)}
   .codes-list{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:4px}
   .codes-list .code{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;
     text-align:center;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:15px;letter-spacing:.04em}
@@ -330,6 +359,19 @@
       <h3>Quem mais estudou</h3>
       <div id="rankList"><span class="none">ainda sem dados…</span></div>
     </div>
+  </div>
+
+  <!-- ===== Mural da sala ===== -->
+  <div class="mural">
+    <h3>📣 Mural da sala</h3>
+    <div class="bot-pin">
+      <div class="bot-av">🚒</div>
+      <div class="bot-line">
+        <div class="nm">Sgt. Fagulha <span class="tag">BOT</span></div>
+        <div class="msg" id="botMsg">Bora pra cima. Um assunto de cada vez.</div>
+      </div>
+    </div>
+    <div class="feed" id="feed"><div class="feed-empty">As conquistas da galera aparecem aqui.</div></div>
   </div>
 
   <!-- ===== Progresso ===== -->
@@ -424,7 +466,7 @@
 
     <section class="auth-pane" id="paneCodes" hidden>
       <h3>Guarde seus códigos de recuperação</h3>
-      <p class="lead">Cada código só funciona <b>uma vez</b>. Use um deles se esquecer sua senha. Essa é a única vez que eles aparecem na tela.</p>
+      <p class="lead">Guarde esses 5 códigos — qualquer um deles troca sua senha se você esquecer, e continuam valendo mesmo depois de usados. Essa é a única vez que eles aparecem na tela.</p>
       <div id="codesList" class="codes-list"></div>
       <div class="modal-actions" style="margin:14px 0">
         <button class="btn-ghost" id="btnCopyCodes" style="flex:1">Copiar códigos</button>
@@ -471,6 +513,11 @@
     <div class="modal-actions">
       <button class="btn-primary" id="accSaveName">Salvar nome</button>
       <button class="btn-ghost" id="btnLogout">Sair</button>
+    </div>
+
+    <div class="field">
+      <label>Sessões de foco recentes</label>
+      <div id="pomoSessionsList" class="pomo-sessions"><span class="hint">nenhuma sessão registrada ainda</span></div>
     </div>
 
     <div class="danger-zone" id="adminZone" hidden>
@@ -607,6 +654,11 @@
   ];
   const CAT_AREAS = CATALOG.map(c=>c[0]);
   const CAT_SUBJECTS = [...new Set(CATALOG.flatMap(c=>c[1]))];
+  const SUBJECT_AREA_MAP = new Map();
+  CATALOG.forEach(([area, subs])=> subs.forEach(s=> SUBJECT_AREA_MAP.set(s, area)));
+
+  /* ---------------- frases motivacionais (mural do bot) ---------------- */
+  const BOT_PHRASES = ["A disciplina é a ponte entre metas e realizações.", "Não pare quando estiver cansado, pare quando terminar.", "O sucesso é a soma de pequenos esforços repetidos dia após dia.", "A consistência vence o talento.", "Estudar hoje é o sacrifício que garante a liberdade de amanhã.", "A disciplina vence a motivação todos os dias.", "Não confie na motivação, confie no seu cronograma.", "A dor da disciplina é menor que a dor do arrependimento.", "Faça o que precisa ser feito, com vontade ou sem vontade.", "O segredo do sucesso é a constância do propósito.", "Menos desculpas, mais revisões.", "O hábito de estudar transforma o esforço em resultado.", "Mantenha o foco no seu objetivo, não nos obstáculos.", "A qualidade do seu estudo define a sua aprovação.", "Seja mais forte que a sua melhor desculpa.", "A rotina é o que separa os amadores dos profissionais.", "Não negocie com a sua preguiça.", "O foco é a chave que abre a porta do sucesso.", "Disciplina não é fazer o que gosta, é fazer o que precisa.", "Transforme seu tempo livre em tempo de preparação.", "A aprovação é um caminho, não um destino imediato.", "Cada erro no simulado é uma lição para o dia da prova.", "Se está difícil, é porque você está subindo de nível.", "A persistência é o caminho do êxito.", "Não desista só porque o progresso é lento.", "Grandes coisas levam tempo. Continue firme.", "A derrota só é real se você decidir parar.", "Caiu sete vezes, levante oito.", "A resiliência é o que diferencia o aprovado do desistente.", "Aprenda a descansar, não a desistir.", "O fracasso é apenas um desvio, não o fim da estrada.", "Mantenha a fé no seu processo.", "A sua hora vai chegar, desde que você não pare.", "A jornada é longa, mas a recompensa vale a pena.", "Resista à tentação de desistir quando as coisas complicam.", "Você é mais capaz do que imagina.", "O sucesso nasce do querer, da determinação e da insistência.", "Não olhe para trás, você não está indo para lá.", "O tempo que você gasta estudando nunca é perdido.", "Persista até que o difícil se torne fácil.", "Acredite em si mesmo e o resto virá.", "Você não está estudando para passar, está estudando até passar.", "A sua mentalidade define o seu resultado.", "Imagine-se tomando posse e trabalhe por isso.", "O seu esforço é o seu maior investimento.", "Trate o estudo como o trabalho mais importante da sua vida.", "A aprovação é o resultado da sua preparação.", "Seja o aluno que você gostaria de ter sido.", "Ocupe a sua vaga antes mesmo da prova.", "Confie no processo que você criou.", "A sua dedicação reflete seus sonhos.", "Estude com a mente de um campeão.", "O medo de falhar não pode ser maior que a vontade de vencer.", "Visualize o sucesso para alcançá-lo.", "Cada questão resolvida é um passo para a posse.", "Tenha orgulho do caminho que está trilhando.", "Você é o protagonista da sua própria história.", "Mantenha os olhos no prêmio.", "A sua determinação é imbatível.", "O amanhã começa com as escolhas de hoje.", "Avance sempre.", "Estude, persista, conquiste.", "O foco é tudo.", "Vá e vença.", "Sem esforço, sem ganho.", "Seja extraordinário.", "A sua hora vem.", "Estude com paixão.", "Foco total hoje.", "Não pare agora.", "Acredite e faça.", "Seja incansável.", "Um passo por dia.", "Mire no topo.", "Vencer é inevitável.", "Mantenha o ritmo.", "Construa o futuro.", "Superação constante.", "Nada é impossível.", "Domine o conteúdo.", "Sacrifique o conforto momentâneo pela glória futura.", "O tempo investido hoje é o salário de amanhã.", "Não desperdice o tempo que você tem disponível.", "O seu futuro está sendo construído nas horas de estudo.", "A paciência é a virtude de quem conquista concursos.", "Aproveite cada minuto como se fosse o último antes da prova.", "O tempo voa, não o deixe passar em vão.", "Organize seu tempo e dominará o seu destino.", "O tempo é o seu recurso mais precioso, use-o bem.", "Não espere pelas condições perfeitas, crie-as.", "Cada hora de estudo conta no final.", "A vida é feita de escolhas, escolha estudar agora.", "Não deixe para amanhã o que você pode aprender hoje.", "O sacrifício de hoje é o orgulho de amanhã.", "Seja eficiente com o seu tempo.", "O relógio não para, e sua aprovação também não.", "Valorize cada página lida.", "O tempo é o melhor professor para quem sabe estudar.", "Aprenda a gerenciar seu tempo e gerenciará sua vida.", "O sucesso ama a pressa de quem estuda com foco.", "A educação é a arma mais poderosa que você pode usar.", "O conhecimento é o único bem que ninguém tira de você.", "Estudar é o caminho mais curto para mudar de vida.", "A sua inteligência é um músculo, exercite-a.", "O aprendizado é um tesouro que seguirá seu dono.", "A vitória é para quem acredita no trabalho duro.", "Seja a sua própria inspiração.", "O sucesso é uma jornada, aproveite o aprendizado.", "Você está mais perto do que ontem.", "Não compare seu progresso com o dos outros.", "Cada dia é uma nova chance de aprender mais.", "Sua persistência superará qualquer dificuldade.", "O que você faz nos bastidores define o sucesso no palco.", "A sua força reside na sua vontade de aprender.", "A dificuldade ensina, a persistência prepara.", "O seu potencial é ilimitado.", "Mantenha a chama do objetivo acesa.", "O conhecimento abre portas inimagináveis.", "A sua dedicação é a garantia do seu futuro.", "A vitória é a soma de todos os pequenos passos.", "Seus resultados são reflexos do seu empenho.", "O topo é o único lugar que importa.", "Não pare até se orgulhar de si mesmo.", "A aprovação é a sua marca registrada.", "Transforme o medo em combustível para estudar.", "A confiança vem com o preparo.", "Você tem tudo o que precisa para vencer.", "Seja melhor que o candidato de ontem.", "O sucesso exige foco absoluto.", "A vitória pertence aos que se preparam.", "Estude até que seus sonhos virem realidade.", "O esforço é visível no seu progresso.", "Sua dedicação será recompensada.", "Não há atalhos, apenas trabalho duro.", "A constância vence a inconstância.", "O seu foco é o seu superpoder.", "Seja resiliente nas revisões.", "O sucesso gosta de velocidade e precisão.", "Estude como se fosse a última chance.", "A aprovação é o prêmio da constância.", "Mantenha o equilíbrio entre estudo e descanso.", "A clareza do objetivo traz a motivação necessária.", "O seu sucesso depende de você.", "Cada erro é um passo para o acerto.", "A jornada molda o caráter do vencedor.", "A sua persistência é admirável.", "O plano de estudos é o seu mapa da mina.", "Não duvide da sua capacidade.", "A sua aprovação é uma questão de tempo.", "Siga o fluxo do aprendizado.", "Seja um estudante de alta performance.", "A mente preparada vence a prova.", "A organização precede o êxito.", "A sua determinação é o motor da aprovação.", "O estudo é o caminho da liberdade.", "Foque na matéria, não no problema.", "O sucesso começa no pensamento.", "A sua vitória será o resultado de hoje.", "Nunca subestime seu potencial.", "Continue sempre, nunca pare.", "A dor passa, a nomeação fica.", "Seja um caçador de questões.", "O seu nome vai estar na lista.", "Nada resiste ao trabalho bem feito.", "Você está construindo o seu império.", "A persistência supera o talento.", "O seu dia de brilhar vai chegar.", "Mantenha a cabeça erguida e o livro aberto.", "Estude até o cansaço virar hábito.", "Você é capaz de aprender tudo.", "A sua resiliência é o seu maior trunfo.", "Foque na solução, não na dificuldade.", "A constância é a chave para a porta da posse.", "O seu futuro agradece o seu esforço de hoje.", "Não pare de acreditar em você.", "A vitória é a recompensa de quem não desiste.", "Estude, revise, aplique, vença.", "Você é o seu maior adversário.", "A aprovação não é sorte, é preparo.", "Mantenha a disciplina sempre.", "O conhecimento nunca é demais.", "A sua jornada é única, respeite-a.", "Seja a versão mais estudiosa de si mesmo.", "O sucesso é uma decisão diária.", "A sua mente é o seu maior instrumento.", "Não há limite para quem estuda.", "O êxito é uma questão de persistência.", "Cada página é uma vitória.", "Você está no controle da sua jornada.", "O resultado chegará no tempo certo.", "Acredite na sua trajetória.", "O estudo transforma realidades.", "A sua vaga está te esperando.", "Mantenha-se firme no propósito.", "O esforço de hoje é o seu diferencial.", "Seja um estudante imparável.", "A vitória é o destino de quem insiste.", "Confie no plano, siga o método.", "Estude com propósito, vença com mérito.", "Você vai conseguir!"];
 
   /* ---------------- autenticação ---------------- */
   function traduzErro(err){
@@ -724,7 +776,7 @@
   function downloadCodes(){
     if(!pendingCodesPlain) return;
     const txt = 'Sala de Estudos — códigos de recuperação\nUsuário: '+pendingUsername+'\n\n'
-      + pendingCodesPlain.join('\n') + '\n\nCada código só funciona uma vez. Guarde em lugar seguro.\n';
+      + pendingCodesPlain.join('\n') + '\n\nQualquer um destes códigos troca sua senha, mesmo depois de usado. Guarde em lugar seguro.\n';
     const blob = new Blob([txt], {type:'text/plain'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -858,12 +910,59 @@
     if(error) console.error(error); else state.myProfile = data;
   }
 
+  /* ---------------- sessões de pomodoro (recentes, com opção de excluir) ---------------- */
+  async function logPomodoroSession(minutes){
+    if(!state.me) return;
+    const {error} = await supa.from('pomodoro_sessions').insert({user_id: state.me.id, minutes, completed_at: Date.now()});
+    if(error) console.error(error);
+  }
+  function fmtWhen(ts){
+    const diffMin = Math.max(0, Math.round((Date.now()-ts)/60000));
+    if(diffMin<1) return 'agora';
+    if(diffMin<60) return 'há '+diffMin+' min';
+    const h = Math.round(diffMin/60);
+    if(h<24) return 'há '+h+'h';
+    return 'há '+Math.round(h/24)+'d';
+  }
+  async function renderPomodoroSessions(){
+    const wrap = el('pomoSessionsList');
+    const {data, error} = await supa.from('pomodoro_sessions').select('*')
+      .eq('user_id', state.me.id).order('completed_at', {ascending:false}).limit(10);
+    if(error){ console.error(error); wrap.innerHTML='<span class="hint">não deu pra carregar.</span>'; return; }
+    if(!data || !data.length){ wrap.innerHTML='<span class="hint">nenhuma sessão registrada ainda</span>'; return; }
+    wrap.innerHTML = data.map(r=>`
+      <div class="pomo-row">
+        <span class="pm">${Math.round(r.minutes)}min</span>
+        <span class="pd">${fmtWhen(r.completed_at)}</span>
+        <button class="pdel" data-delpomo="${r.id}" data-min="${r.minutes}" title="Não cumpri esse tempo">Excluir</button>
+      </div>`).join('');
+    wrap.querySelectorAll('[data-delpomo]').forEach(b=>{
+      b.onclick = ()=> deletePomodoroSession(b.getAttribute('data-delpomo'), Number(b.getAttribute('data-min')));
+    });
+  }
+  async function deletePomodoroSession(id, minutes){
+    if(!confirm('Remover essa sessão de foco? O tempo será descontado das suas estatísticas.')) return;
+    const {error} = await supa.from('pomodoro_sessions').delete().eq('id', id);
+    if(error){ console.error(error); toast('Não deu pra remover.'); return; }
+    const p = state.myProfile;
+    const patch = {
+      focus_minutes: Math.max(0, (p.focus_minutes||0) - minutes),
+      focus_cycles: Math.max(0, (p.focus_cycles||0) - 1)
+    };
+    const {data, error:err2} = await supa.from('profiles').update(patch).eq('id', state.me.id).select().single();
+    if(!err2) state.myProfile = data; else console.error(err2);
+    renderMyPanel();
+    await renderPomodoroSessions();
+    toast('Sessão removida.');
+  }
+
   /* ---------------- rendering ---------------- */
   const el = (id)=>document.getElementById(id);
   const esc = (s)=> (s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const avColor = (name)=>{ let h=0; for(const ch of (name||'?')) h=(h*31+ch.charCodeAt(0))>>>0;
     const hue=h%360; return `hsl(${hue} 62% 62%)`; };
   const initials = (n)=> (n||'?').trim().slice(0,2).toUpperCase();
+  const nameHtml = (n)=> `<span style="color:${avColor(n)}">${esc(n)}</span>`;
 
   function render(){
     const cards = state.cards;
@@ -904,6 +1003,28 @@
 
     renderPresence();
     renderMyPanel();
+    renderBot();
+    renderFeed();
+  }
+
+  function renderBot(){
+    const bucket = Math.floor(Date.now()/(20*60*1000));
+    el('botMsg').textContent = BOT_PHRASES[bucket % BOT_PHRASES.length];
+  }
+
+  function renderFeed(){
+    const wrap = el('feed');
+    const done = state.cards.filter(c=> c.status==='done' || c.status==='review')
+      .slice().sort((a,b)=> b.movedAt-a.movedAt).slice(0,10);
+    if(!done.length){ wrap.innerHTML = '<div class="feed-empty">As conquistas da galera aparecem aqui.</div>'; return; }
+    wrap.innerHTML = done.map(c=>{
+      const owner = profileName(c.ownerId);
+      return `<div class="fi">
+        <span class="av" style="background:${avColor(owner)}">${esc(initials(owner))}</span>
+        <div><div class="tx"><b style="color:${avColor(owner)}">${esc(owner)}</b> concluiu <span class="subj">${esc(c.subject)}</span>${c.reviewsDone?' <span class="tm">(revisado '+c.reviewsDone+'x)</span>':''}</div>
+        <div class="tm">${fmtWhen(c.movedAt)}</div></div>
+      </div>`;
+    }).join('');
   }
 
   const fmtMin = (m)=>{ m=Math.round(m||0); return m<60 ? m+'min' : Math.floor(m/60)+'h'+(m%60?' '+(m%60)+'min':''); };
@@ -948,7 +1069,7 @@
       const me = state.me && e.id===state.me.id;
       return `<div class="rank-row ${me?'me':''}">
         <span class="pos">${i+1}</span>
-        <span class="nm">${esc(e.name||'—')}</span>
+        <span class="nm">${me ? esc(e.name||'—') : nameHtml(e.name||'—')}</span>
         <span class="sc">${e.completed||0}✓ ${e.reviews?('· '+e.reviews+'🔁'):''}</span>
       </div>`;
     }).join('');
@@ -959,13 +1080,13 @@
     const owner = profileName(c.ownerId);
     let who='';
     if(c.status==='todo'){
-      who = `criado por ${esc(owner)}`;
+      who = `criado por ${nameHtml(owner)}`;
     }else if(c.status==='doing'){
-      who = `<span class="act">▸ ${esc(owner)}</span> estudando`;
+      who = `<span class="act">▸</span> ${nameHtml(owner)} estudando`;
     }else if(c.status==='review'){
-      who = `<span class="act">🔁</span> aguardando revisão — ${esc(owner)}`;
+      who = `<span class="act">🔁</span> aguardando revisão — ${nameHtml(owner)}`;
     }else{
-      who = `<span class="act">✓</span> concluído por ${esc(owner)}`;
+      who = `<span class="act">✓</span> concluído por ${nameHtml(owner)}`;
     }
     let actions='';
     if(mine){
@@ -1009,6 +1130,13 @@
     wrap.querySelectorAll('[data-f]').forEach(b=>{
       b.onclick=()=>{ state.filter=b.getAttribute('data-f'); render(); };
     });
+  }
+
+  // filtra as sugestões de assunto pela matéria escolhida (se houver uma reconhecida)
+  function refreshSubjList(area){
+    const match = CATALOG.find(([a])=> a.toLowerCase()===area.toLowerCase());
+    const list = match ? match[1] : CAT_SUBJECTS;
+    el('subjList').innerHTML = list.map(s=>`<option value="${esc(s)}">`).join('');
   }
 
   /* ---------------- actions ---------------- */
@@ -1071,7 +1199,7 @@
       html += live.map(p=>{
         const me = state.me && p.id===state.me.id;
         return `<span class="chip-who ${me?'me':''}">
-          <span class="av" style="background:${avColor(p.display_name)}">${esc(initials(p.display_name))}</span>${esc(p.display_name)}</span>`;
+          <span class="av" style="background:${avColor(p.display_name)}">${esc(initials(p.display_name))}</span>${nameHtml(p.display_name)}</span>`;
       }).join('');
     }
     wrap.innerHTML=html;
@@ -1110,7 +1238,10 @@
   /* ---------------- UI wiring ---------------- */
   function wireUI(){
     // add
-    el('btnAdd').onclick=()=>{ el('addModal').hidden=false; el('subjInput').value=''; el('areaInput').value=''; el('subjInput').focus(); };
+    el('btnAdd').onclick=()=>{
+      el('addModal').hidden=false; el('subjInput').value=''; el('areaInput').value='';
+      refreshSubjList(''); el('subjInput').focus();
+    };
     el('cancelAdd').onclick=()=> el('addModal').hidden=true;
     el('saveAdd').onclick=()=>{
       const s=el('subjInput').value.trim(); if(!s){ el('subjInput').focus(); return; }
@@ -1118,6 +1249,11 @@
       el('addModal').hidden=true;
     };
     el('subjInput').addEventListener('keydown',e=>{ if(e.key==='Enter') el('areaInput').focus(); });
+    el('subjInput').addEventListener('input', ()=>{
+      const v = el('subjInput').value;
+      if(SUBJECT_AREA_MAP.has(v) && !el('areaInput').value.trim()){ el('areaInput').value = SUBJECT_AREA_MAP.get(v); }
+    });
+    el('areaInput').addEventListener('input', ()=> refreshSubjList(el('areaInput').value.trim()));
 
     // settings
     el('btnSettings').onclick=()=>{
@@ -1139,6 +1275,7 @@
       el('accName').value = (state.myProfile && state.myProfile.display_name) || '';
       el('adminZone').hidden = !(state.myProfile && state.myProfile.is_admin);
       el('adminUser').value=''; el('adminCodeResult').textContent='';
+      renderPomodoroSessions();
       el('accModal').hidden=false;
     };
     el('cancelAcc').onclick=()=> el('accModal').hidden=true;
@@ -1200,6 +1337,7 @@
       if(left<0){
         if(mode==='focus'){
           await touchActivity(dur.focus/60, 1);
+          await logPomodoroSession(dur.focus/60);
           mode='break'; left=dur.break; toast('Ciclo de foco concluído. Respira 5 min. ☕');
         } else { mode='focus'; left=dur.focus; toast('Pausa acabou. De volta ao foco! 🔥'); }
       }

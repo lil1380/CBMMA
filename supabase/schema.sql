@@ -1,10 +1,16 @@
 -- Sala de Estudos — Painel de Prontidão (CBM-MA)
 -- Rode este script inteiro no Supabase: Dashboard > SQL Editor > New query > Run.
 --
--- Este script SUBSTITUI o schema anterior (login por e-mail). Login agora é
--- por usuário + senha, sem e-mail e sem SMTP. Recuperação de senha por dois
--- caminhos, os dois sem depender de nenhum serviço externo:
---   1) Códigos de recuperação (5 códigos de uso único, gerados no cadastro).
+-- Este arquivo é a referência do schema completo (útil para uma instalação
+-- do zero). Depois da primeira vez, NÃO rode este arquivo de novo — ele
+-- apaga tudo (contas, assuntos, estatísticas) para recriar as tabelas.
+-- Ajustes seguintes vão em supabase/migrations/*.sql, que só alteram o que
+-- mudou, sem apagar dados existentes.
+--
+-- Login por usuário + senha, sem e-mail e sem SMTP. Recuperação de senha por
+-- dois caminhos, os dois sem depender de nenhum serviço externo:
+--   1) Códigos de recuperação (5 códigos fixos, gerados no cadastro —
+--      continuam válidos mesmo depois de usados).
 --   2) Reset pelo administrador (código temporário de 24h, entregue fora do
 --      sistema — WhatsApp, presencial).
 --
@@ -77,6 +83,20 @@ create policy "config select all logados" on public.config for select to authent
 create policy "config update logados" on public.config for update to authenticated using (true);
 insert into public.config (id, sala, exam_date) values (1, 'Sala CBM-MA', '2026-10-18');
 
+-- Sessões de foco (pomodoro) registradas individualmente, para poder
+-- excluir uma sessão que não foi cumprida de verdade. Cada linha também
+-- soma em profiles.focus_minutes/focus_cycles (feito pelo cliente).
+create table public.pomodoro_sessions (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  minutes numeric not null,
+  completed_at bigint not null
+);
+alter table public.pomodoro_sessions enable row level security;
+create policy "pomodoro select own" on public.pomodoro_sessions for select to authenticated using (user_id = auth.uid());
+create policy "pomodoro insert own" on public.pomodoro_sessions for insert to authenticated with check (user_id = auth.uid());
+create policy "pomodoro delete own" on public.pomodoro_sessions for delete to authenticated using (user_id = auth.uid());
+
 -- ===== Recuperação de senha sem e-mail =====
 
 -- Códigos de recuperação: gerados no cadastro, mostrados 1x, guardados só
@@ -141,12 +161,13 @@ begin
     return false;
   end if;
 
+  -- Os códigos são fixos (reutilizáveis) por pedido do usuário: não marcamos
+  -- used_at, então os 5 continuam valendo para sempre.
   for v_row in select id, code_hash, code_salt from public.recovery_codes
-               where user_id = v_user_id and used_at is null
+               where user_id = v_user_id
   loop
     v_hash := encode(digest(v_row.code_salt || '::' || upper(trim(p_code)), 'sha256'), 'hex');
     if v_hash = v_row.code_hash then
-      update public.recovery_codes set used_at = now() where id = v_row.id;
       update auth.users set encrypted_password = crypt(p_new_password, gen_salt('bf')) where id = v_user_id;
       delete from public.recovery_attempts where user_id = v_user_id;
       return true;
