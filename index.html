@@ -67,6 +67,12 @@
     border-radius:8px;width:38px;height:38px;font-size:16px;display:grid;place-items:center}
   .gear:hover{color:var(--ink);border-color:var(--faint)}
 
+  /* user chip */
+  .hd-user{display:flex;align-items:center;gap:9px;padding-left:14px;border-left:1px solid var(--line-soft)}
+  .hd-user .av{width:32px;height:32px;flex:0 0 32px;border-radius:50%;display:grid;place-items:center;
+    font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600;font-size:12px;color:#0d1116;cursor:pointer;border:none}
+  .hd-user .nm{font-size:12.5px;font-weight:600;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
   /* presence strip */
   .presence{display:flex;align-items:center;gap:8px;padding:9px 20px 12px 24px;
     border-top:1px solid var(--line-soft);flex-wrap:wrap}
@@ -202,6 +208,49 @@
   .rule{font-size:11.5px;color:var(--faint);margin-top:14px;line-height:1.5;
     border-top:1px solid var(--line-soft);padding-top:12px}
 
+  /* ---------- Autenticação ---------- */
+  .auth-veil{position:fixed;inset:0;background:var(--bg);z-index:100;display:grid;place-items:center;
+    padding:18px;overflow-y:auto}
+  .auth-veil[hidden]{display:none}
+  .auth-card{width:100%;max-width:430px;background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:24px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .auth-card::before{content:"";position:absolute;left:0;top:0;right:0;height:4px;background:var(--red)}
+  .auth-brand{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+  .auth-brand h2{font-family:"Oswald","Arial Narrow","Helvetica Neue",Arial,sans-serif;font-weight:700;
+    text-transform:uppercase;letter-spacing:.04em;font-size:17px;margin:0}
+  .auth-brand .sb{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);margin-top:4px}
+  .auth-tabs{display:flex;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:4px;margin-bottom:18px}
+  .auth-tabs[hidden]{display:none}
+  .auth-tabs button{flex:1;background:transparent;border:none;color:var(--muted);border-radius:6px;padding:9px;font-size:13px;font-weight:600}
+  .auth-tabs button.on{background:var(--raise);color:var(--ink)}
+  .auth-pane[hidden]{display:none}
+  .auth-pane p.lead{color:var(--muted);font-size:12.5px;line-height:1.5;margin:0 0 16px}
+  .fx{margin-bottom:13px}
+  .fx label{display:block;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+  .fx input{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--ink);border-radius:8px;
+    padding:11px 12px;font-size:14px;font-family:inherit}
+  .fx .hint{font-size:11px;line-height:1.45;margin-top:5px;color:var(--faint)}
+  .auth-msg{font-size:12.5px;line-height:1.5;border-radius:8px;padding:10px 12px;margin-bottom:14px;display:none}
+  .auth-msg.show{display:block}
+  .auth-msg.bad{background:rgba(216,35,47,.12);border:1px solid rgba(216,35,47,.4);color:#f0a6ab}
+  .auth-msg.good{background:rgba(59,178,127,.12);border:1px solid rgba(59,178,127,.4);color:#7fd6ae}
+  .btn-block{width:100%;background:var(--red);color:#fff;border:none;border-radius:8px;padding:12px;font-weight:600;font-size:14px}
+  .btn-block:hover{background:#e4343f}
+  .btn-block:disabled{opacity:.55;cursor:not-allowed}
+  .auth-link{background:none;border:none;color:var(--muted);font-size:12px;text-decoration:underline;
+    padding:4px 0;display:block;margin-top:12px}
+  .auth-link:hover{color:var(--ink)}
+  .auth-foot{font-size:11px;color:var(--faint);line-height:1.5;border-top:1px solid var(--line-soft);
+    padding-top:12px;margin-top:16px}
+  .auth-foot b{color:var(--muted)}
+  .danger-zone{border:1px solid rgba(216,35,47,.4);background:rgba(216,35,47,.08);border-radius:9px;
+    padding:14px;margin-top:6px}
+  .danger-zone h4{margin:0 0 6px;font-size:12.5px;color:#f0a6ab;text-transform:uppercase;letter-spacing:.06em}
+  .danger-zone p{margin:0 0 12px;font-size:12px;color:var(--muted);line-height:1.5}
+  .btn-danger{width:100%;background:transparent;border:1px solid var(--red);color:#f0a6ab;border-radius:8px;
+    padding:11px;font-weight:600;font-size:13.5px}
+  .btn-danger:hover{background:rgba(216,35,47,.15)}
+
   /* ---------- Toast ---------- */
   .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:22px;z-index:80;
     background:var(--raise);border:1px solid var(--line);border-radius:9px;padding:11px 16px;
@@ -252,6 +301,9 @@
           <div class="v"><span class="dot"></span><span id="mLive">0</span></div>
         </div>
         <button class="gear" id="btnSettings" title="Ajustes da sala" aria-label="Ajustes da sala">⚙</button>
+        <div class="hd-user" id="hdUser" hidden>
+          <button class="av" id="hdAv" title="Minha conta">—</button>
+        </div>
       </div>
     </div>
     <div class="presence" id="presence">
@@ -313,7 +365,7 @@
   </div>
 
   <footer class="note">
-    Este é um espaço de foco — <b>sem chat</b>. Cada um adiciona seus assuntos; qualquer pessoa pode mover cartões pelo quadro. Você só apaga o que você mesmo criou.
+    Este é um espaço de foco — <b>sem chat</b>. O quadro de todo mundo fica visível pra todo mundo, mas cada pessoa só cria, move e apaga os próprios assuntos.
   </footer>
 </div>
 
@@ -330,19 +382,80 @@
   <div class="cyc" id="pomoCyc" title="Ciclos de foco concluídos">×0</div>
 </div>
 
-<!-- Entrada: nome -->
-<div class="veil" id="gate">
+<!-- Autenticação -->
+<div class="auth-veil" id="authVeil">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="badge" aria-hidden="true"><svg viewBox="0 0 24 24" fill="#fff"><path d="M12 2s5 4.2 5 9.4c0 1.2-.4 2.2-1 3 .1-1.6-.6-2.9-1.6-3.7.3 2.2-.9 3.4-2 4.4-.9.8-1.6 1.7-1.6 3 0 .3 0 .6.1.9C8.7 21.4 7 19.2 7 16.4c0-1.6.7-2.9 1.6-4-.1.9.2 1.7.8 2.2-.4-2.4.9-4.6 2.6-6-.2 1 .2 1.9.9 2.4C13.7 8.6 13 6.9 12 6c.5-1.6.4-3-.1-4 .1 0 .1 0 .2 0z"/></svg></div>
+      <div><h2>Painel de Prontidão</h2><div class="sb" id="authSala">Sala CBM-MA</div></div>
+    </div>
+
+    <div class="auth-tabs" id="authTabs">
+      <button data-pane="login" class="on">Entrar</button>
+      <button data-pane="signup">Cadastrar</button>
+    </div>
+
+    <div class="auth-msg" id="authMsg"></div>
+
+    <section class="auth-pane" id="paneLogin">
+      <div class="fx"><label for="loginEmail">E-mail</label>
+        <input id="loginEmail" type="email" autocomplete="username" placeholder="voce@email.com" /></div>
+      <div class="fx"><label for="loginPass">Senha</label>
+        <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••" /></div>
+      <button class="btn-block" id="btnLogin">Entrar na prontidão</button>
+      <button class="auth-link" id="btnForgot">Esqueci minha senha</button>
+    </section>
+
+    <section class="auth-pane" id="paneSignup" hidden>
+      <div class="fx"><label for="suNome">Nome de guerra</label>
+        <input id="suNome" maxlength="30" autocomplete="name" placeholder="ex: Lílian" /></div>
+      <div class="fx"><label for="suEmail">E-mail</label>
+        <input id="suEmail" type="email" autocomplete="username" placeholder="voce@email.com" /></div>
+      <div class="fx"><label for="suPass">Senha</label>
+        <input id="suPass" type="password" autocomplete="new-password" placeholder="mínimo 8 caracteres" />
+        <div class="hint">Mínimo 8 caracteres.</div></div>
+      <button class="btn-block" id="btnSignup">Criar conta e entrar</button>
+      <div class="auth-foot">Usamos seu e-mail só pra login e pra recuperar sua senha se você esquecer. Sem chat, sem notificações.</div>
+    </section>
+
+    <section class="auth-pane" id="paneForgot" hidden>
+      <p class="lead">Informe o e-mail da sua conta. Vamos mandar um link pra você criar uma senha nova.</p>
+      <div class="fx"><label for="fgEmail">E-mail</label>
+        <input id="fgEmail" type="email" autocomplete="username" placeholder="voce@email.com" /></div>
+      <button class="btn-block" id="btnForgotSend">Enviar link de redefinição</button>
+      <button class="auth-link" id="btnForgotBack">Voltar para o login</button>
+    </section>
+
+    <section class="auth-pane" id="paneReset" hidden>
+      <p class="lead">Defina sua nova senha.</p>
+      <div class="fx"><label for="rsPass">Nova senha</label>
+        <input id="rsPass" type="password" autocomplete="new-password" placeholder="mínimo 8 caracteres" /></div>
+      <button class="btn-block" id="btnResetSave">Salvar nova senha</button>
+    </section>
+  </div>
+</div>
+
+<!-- Minha conta -->
+<div class="veil" id="accModal" hidden>
   <div class="modal">
-    <h3>Entrar na sala</h3>
-    <p>Escolha um nome pra aparecer no painel de prontidão. Sem cadastro, sem senha — é só pra galera saber quem está estudando junto.</p>
+    <h3>Minha conta</h3>
+    <p>Logado como <b id="accEmail">—</b></p>
     <div class="field">
-      <label for="nameInput">Como quer ser chamado(a)?</label>
-      <input id="nameInput" maxlength="22" placeholder="ex: Lílian, Recruta 07, Aspirante…" autocomplete="off" />
+      <label for="accName">Nome de guerra</label>
+      <input id="accName" maxlength="30" autocomplete="name" />
     </div>
     <div class="modal-actions">
-      <button class="btn-primary" id="enterBtn">Entrar na prontidão</button>
+      <button class="btn-primary" id="accSaveName">Salvar nome</button>
+      <button class="btn-ghost" id="btnLogout">Sair</button>
     </div>
-    <div class="rule">Não há mensagens ou chat aqui. As únicas ações são adicionar assuntos e movê-los entre <b>A estudar → Estudando → Concluído</b>.</div>
+    <div class="danger-zone">
+      <h4>Zona de risco</h4>
+      <p>Apaga sua conta, seus assuntos e suas estatísticas para sempre. Não tem como desfazer.</p>
+      <button class="btn-danger" id="btnDeleteAccount">Excluir minha conta e meus dados</button>
+    </div>
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn-ghost" id="cancelAcc" style="flex:1">Fechar</button>
+    </div>
   </div>
 </div>
 
@@ -353,7 +466,8 @@
     <p>Adicione um tópico à fila de estudos da sala.</p>
     <div class="field">
       <label for="subjInput">Assunto</label>
-      <input id="subjInput" maxlength="90" placeholder="ex: Concordância verbal" autocomplete="off" />
+      <input id="subjInput" list="subjList" maxlength="90" placeholder="ex: Concordância verbal" autocomplete="off" />
+      <datalist id="subjList"></datalist>
     </div>
     <div class="field">
       <label for="areaInput">Matéria</label>
@@ -389,48 +503,21 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 (function(){
   "use strict";
 
-  /* ---------------- Supabase REST helpers ---------------- */
+  /* ---------------- Supabase client ---------------- */
   const SB_URL = 'https://jdyaglgtcqjypnwfjwar.supabase.co';
-  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkeWFnbGd0Y3FqeXBud2Zqd2FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMjEwODYsImV4cCI6MjA5OTg5NzA4Nn0.XAeP_7CL4Ot9RE1d6vwYSFvK3WWh45vFD4XJSLnTE94';
-
-  async function sb(path, opts){
-    opts = opts || {};
-    const headers = Object.assign({
-      'apikey': SB_KEY,
-      'Authorization': 'Bearer '+SB_KEY,
-      'Content-Type': 'application/json'
-    }, opts.headers||{});
-    const res = await fetch(SB_URL+'/rest/v1/'+path, Object.assign({}, opts, {headers}));
-    if(!res.ok){
-      const body = await res.text().catch(()=>'');
-      throw new Error('Supabase '+res.status+' em '+path+': '+body.slice(0,200));
-    }
-    const ct = res.headers.get('content-type')||'';
-    if(res.status===204 || !ct.includes('application/json')) return null;
-    return res.json();
-  }
+  const SB_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkeWFnbGd0Y3FqeXBud2Zqd2FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMjEwODYsImV4cCI6MjA5OTg5NzA4Nn0.XAeP_7CL4Ot9RE1d6vwYSFvK3WWh45vFD4XJSLnTE94';
+  const supa = window.supabase.createClient(SB_URL, SB_ANON_KEY);
 
   function rowToCard(r){
     return {
-      id:r.id, subject:r.subject, area:r.area, status:r.status,
-      ownerId:r.owner_id, ownerName:r.owner_name, activeName:r.active_name,
-      completedBy: r.completed_by_id ? {id:r.completed_by_id, name:r.completed_by_name} : null,
+      id:r.id, subject:r.subject, area:r.area, status:r.status, ownerId:r.owner_id,
       reviewsDone: r.reviews_done||0, reviewCycle: !!r.review_cycle,
       createdAt: Number(r.created_at), movedAt: Number(r.moved_at)
-    };
-  }
-  function cardToRow(c){
-    return {
-      id:c.id, subject:c.subject, area:c.area, status:c.status,
-      owner_id:c.ownerId, owner_name:c.ownerName, active_name:c.activeName||null,
-      completed_by_id: c.completedBy ? c.completedBy.id : null,
-      completed_by_name: c.completedBy ? c.completedBy.name : null,
-      reviews_done: c.reviewsDone||0, review_cycle: !!c.reviewCycle,
-      created_at: c.createdAt, moved_at: c.movedAt
     };
   }
 
@@ -438,11 +525,14 @@
   const todayStr = (d)=> (d||new Date()).toISOString().slice(0,10);
 
   /* ---------------- state ---------------- */
-  const state = { me:null, cards:[], cfg:{sala:'Sala CBM-MA', date:'2026-10-18', seeded:false}, filter:'all',
-    myStats:{focusMinutes:0, focusCycles:0, streak:0, lastActiveDate:null}, allStats:[] };
+  const state = { me:null, myProfile:null, cards:[], profiles:[],
+    cfg:{sala:'Sala CBM-MA', date:'2026-10-18'}, filter:'all' };
+  let appIniciado = false;
+  let pendingDisplayName = null;
+  let loopTimer=null, hbTimer=null, cdTimer=null;
 
-  /* ---------------- seed data (CBM-MA) ---------------- */
-  const SEED = [
+  /* ---------------- catálogo de sugestões (CBM-MA) ---------------- */
+  const CATALOG = [
     ["Língua Portuguesa", ["Interpretação de texto","Ortografia e acentuação","Classes de palavras","Concordância verbal e nominal","Regência verbal e nominal","Crase","Pontuação","Figuras de linguagem","Semântica e sinônimos","Coesão e coerência"]],
     ["Matemática", ["Conjuntos numéricos","Razão e proporção","Regra de três","Porcentagem","Juros simples e compostos","Equações do 1º e 2º grau","Geometria plana","Sistema métrico decimal","Probabilidade"]],
     ["Raciocínio Lógico", ["Proposições e conectivos","Tabelas-verdade","Argumentos e validade","Sequências lógicas","Diagramas lógicos"]],
@@ -452,110 +542,187 @@
     ["Legislação / Direito", ["CF: princípios fundamentais","Direitos e garantias individuais","Segurança pública (art. 144)","Direitos Humanos"]],
     ["Inglês", ["Interpretação de texto","Vocabulário","Tempos verbais","Cognatos e falsos cognatos"]]
   ];
-  function buildSeed(sysId, sysName){
-    const now=Date.now(); const out=[]; let i=0;
-    SEED.forEach(([area, topics])=> topics.forEach(t=>{
-      out.push({id:uid('c'), subject:t, area, status:'todo',
-        ownerId:sysId, ownerName:sysName, activeName:null,
-        createdAt: now+(i++), movedAt:now});
-    }));
-    return out;
+  const CAT_AREAS = CATALOG.map(c=>c[0]);
+  const CAT_SUBJECTS = [...new Set(CATALOG.flatMap(c=>c[1]))];
+
+  /* ---------------- autenticação ---------------- */
+  function traduzErro(err){
+    const m=(err&&err.message)||'';
+    if(/Invalid login credentials/i.test(m)) return 'E-mail ou senha incorretos.';
+    if(/User already registered/i.test(m)) return 'Este e-mail já tem uma conta. Tente entrar.';
+    if(/Password should be at least/i.test(m)) return 'A senha precisa ter no mínimo 8 caracteres.';
+    if(/Unable to validate email address/i.test(m)) return 'E-mail inválido.';
+    if(/rate limit/i.test(m)) return 'Muitas tentativas. Aguarde um pouco e tente de novo.';
+    return m || 'Algo deu errado. Tente de novo.';
+  }
+  function showAuthMsg(text, kind){
+    const m=el('authMsg'); m.textContent=text; m.className='auth-msg show '+(kind==='good'?'good':'bad');
+  }
+  function clearAuthMsg(){ el('authMsg').className='auth-msg'; el('authMsg').textContent=''; }
+  const AUTH_PANES = {login:'paneLogin', signup:'paneSignup', forgot:'paneForgot', reset:'paneReset'};
+  function showAuthPane(pane){
+    Object.entries(AUTH_PANES).forEach(([k,id])=> el(id).hidden = (k!==pane));
+    el('authTabs').hidden = (pane==='forgot' || pane==='reset');
+    el('authTabs').querySelectorAll('[data-pane]').forEach(b=> b.classList.toggle('on', b.getAttribute('data-pane')===pane));
+    clearAuthMsg();
   }
 
-  /* ---------------- init ---------------- */
-  async function init(){
-    // personal identity (per-browser, not shared)
-    const meRaw = localStorage.getItem('me');
-    if(meRaw){ try{ state.me = JSON.parse(meRaw); }catch(e){} }
-    document.getElementById('gate').hidden = !!(state.me && state.me.name);
-
-    try{
-      await loadConfig();
-      await ensureSeed();
-      await refresh();          // first data pull
-      startLoops();
-    }catch(e){
-      console.error(e);
-      document.querySelector('.wrap').insertAdjacentHTML('afterbegin',
-        '<div style="background:#2a1518;border:1px solid #d8232f;color:#ffbcc0;padding:14px;border-radius:10px;margin-bottom:16px;font-size:14px">Não foi possível conectar ao banco de dados da sala. Detalhe: '+esc(String((e&&e.message)||e))+'</div>');
+  async function fazerLogin(){
+    clearAuthMsg();
+    const email=el('loginEmail').value.trim(), pass=el('loginPass').value;
+    if(!email||!pass){ showAuthMsg('Preencha e-mail e senha.'); return; }
+    el('btnLogin').disabled=true;
+    const {error} = await supa.auth.signInWithPassword({email, password:pass});
+    el('btnLogin').disabled=false;
+    if(error) showAuthMsg(traduzErro(error));
+  }
+  async function fazerCadastro(){
+    clearAuthMsg();
+    const nome=el('suNome').value.trim(), email=el('suEmail').value.trim(), pass=el('suPass').value;
+    if(!nome){ showAuthMsg('Informe seu nome de guerra.'); return; }
+    if(!email){ showAuthMsg('Informe seu e-mail.'); return; }
+    if(pass.length<8){ showAuthMsg('A senha precisa ter no mínimo 8 caracteres.'); return; }
+    el('btnSignup').disabled=true;
+    pendingDisplayName = nome;
+    const {data, error} = await supa.auth.signUp({email, password:pass, options:{data:{display_name:nome}}});
+    el('btnSignup').disabled=false;
+    if(error){ showAuthMsg(traduzErro(error)); return; }
+    if(data && data.user && !data.session){
+      showAuthMsg('Conta criada! Confira seu e-mail e clique no link de confirmação antes de entrar.', 'good');
     }
-    wireUI();
-    initPomodoro();
+  }
+  async function fazerEsqueci(){
+    clearAuthMsg();
+    const email=el('fgEmail').value.trim();
+    if(!email){ showAuthMsg('Informe seu e-mail.'); return; }
+    el('btnForgotSend').disabled=true;
+    const {error} = await supa.auth.resetPasswordForEmail(email, {redirectTo: location.origin+location.pathname});
+    el('btnForgotSend').disabled=false;
+    if(error){ showAuthMsg(traduzErro(error)); return; }
+    showAuthMsg('Se esse e-mail tiver uma conta, enviamos um link de redefinição. Confira sua caixa de entrada.', 'good');
+  }
+  async function fazerReset(){
+    clearAuthMsg();
+    const pass=el('rsPass').value;
+    if(pass.length<8){ showAuthMsg('A senha precisa ter no mínimo 8 caracteres.'); return; }
+    el('btnResetSave').disabled=true;
+    const {error} = await supa.auth.updateUser({password:pass});
+    el('btnResetSave').disabled=false;
+    if(error){ showAuthMsg(traduzErro(error)); return; }
+    toast('Senha atualizada!');
+  }
+
+  function wireAuthUI(){
+    el('authTabs').querySelectorAll('[data-pane]').forEach(b=> b.onclick=()=> showAuthPane(b.getAttribute('data-pane')));
+    el('btnForgot').onclick = ()=> showAuthPane('forgot');
+    el('btnForgotBack').onclick = ()=> showAuthPane('login');
+    el('btnLogin').onclick = fazerLogin;
+    el('btnSignup').onclick = fazerCadastro;
+    el('btnForgotSend').onclick = fazerEsqueci;
+    el('btnResetSave').onclick = fazerReset;
+    [['loginEmail',fazerLogin],['loginPass',fazerLogin],
+     ['suNome',fazerCadastro],['suEmail',fazerCadastro],['suPass',fazerCadastro],
+     ['fgEmail',fazerEsqueci],['rsPass',fazerReset]
+    ].forEach(([id,fn])=> el(id).addEventListener('keydown', e=>{ if(e.key==='Enter') fn(); }));
+  }
+
+  async function ensureOwnProfile(){
+    const {data, error} = await supa.from('profiles').select('*').eq('id', state.me.id).maybeSingle();
+    if(error){ console.error(error); return; }
+    if(data){ state.myProfile = data; return; }
+    const nome = pendingDisplayName || (state.me.user_metadata && state.me.user_metadata.display_name) || state.me.email.split('@')[0];
+    const {data:created, error:err2} = await supa.from('profiles').insert({id:state.me.id, display_name:nome}).select().single();
+    if(err2){ console.error(err2); return; }
+    state.myProfile = created;
+    pendingDisplayName = null;
+  }
+
+  async function handleSignedIn(session){
+    state.me = session.user;
+    el('authVeil').hidden = true;
+    await ensureOwnProfile();
+    renderHeaderUser();
+    if(!appIniciado){
+      appIniciado = true;
+      await loadConfig();
+      await refresh();
+      startLoops();
+      wireUI();
+      initPomodoro();
+    } else {
+      await refresh();
+    }
+  }
+  function handleSignedOut(){
+    stopLoops();
+    state.me=null; state.myProfile=null; state.cards=[]; state.profiles=[];
+    el('hdUser').hidden = true;
+    el('authVeil').hidden = false;
+    showAuthPane('login');
+  }
+  supa.auth.onAuthStateChange((event, session)=>{
+    if(event==='PASSWORD_RECOVERY'){ el('authVeil').hidden=false; showAuthPane('reset'); return; }
+    if(event==='SIGNED_OUT'){ handleSignedOut(); return; }
+    if(session){ handleSignedIn(session); }
+  });
+
+  function renderHeaderUser(){
+    if(!state.me) return;
+    el('hdUser').hidden = false;
+    const nm = (state.myProfile && state.myProfile.display_name) || state.me.email;
+    el('hdAv').textContent = initials(nm);
+    el('hdAv').style.background = avColor(nm);
+  }
+
+  async function boot(){
+    el('subjList').innerHTML = CAT_SUBJECTS.map(s=>`<option value="${esc(s)}">`).join('');
+    wireAuthUI();
+    const {data} = await supa.auth.getSession();
+    if(data && data.session){ await handleSignedIn(data.session); }
+    else { el('authVeil').hidden=false; showAuthPane('login'); }
   }
 
   async function loadConfig(){
-    const rows = await sb('config?id=eq.1&select=*');
-    if(rows && rows[0]){
-      const r=rows[0];
-      state.cfg.sala = r.sala || state.cfg.sala;
-      state.cfg.date = r.exam_date || state.cfg.date;
-      state.cfg.seeded = !!r.seeded;
-    }
+    const {data, error} = await supa.from('config').select('*').eq('id',1).maybeSingle();
+    if(!error && data){ state.cfg.sala=data.sala||state.cfg.sala; state.cfg.date=data.exam_date||state.cfg.date; }
     applyConfig();
   }
   function applyConfig(){
-    document.getElementById('salaName').textContent = state.cfg.sala || 'Sala CBM-MA';
+    el('salaName').textContent = state.cfg.sala || 'Sala CBM-MA';
+    el('authSala').textContent = state.cfg.sala || 'Sala CBM-MA';
     renderCountdown();
-  }
-
-  async function ensureSeed(){
-    if(state.cfg.seeded) return;
-    const cards = buildSeed('system', 'Sala');
-    await sb('cards', {method:'POST', body: JSON.stringify(cards.map(cardToRow))});
-    await sb('config?id=eq.1', {method:'PATCH', body: JSON.stringify({seeded:true})});
-    state.cfg.seeded = true;
   }
 
   /* ---------------- data refresh ---------------- */
   async function refresh(){
-    const rows = await sb('cards?select=*&order=created_at.asc');
-    state.cards = (rows||[]).map(rowToCard);
-    await refreshStats();
+    const {data:cardRows, error:e1} = await supa.from('cards').select('*').order('created_at',{ascending:true});
+    if(!e1) state.cards = (cardRows||[]).map(rowToCard); else console.error(e1);
+    const {data:profRows, error:e2} = await supa.from('profiles').select('*');
+    if(!e2) state.profiles = profRows||[]; else console.error(e2);
+    const mine = state.profiles.find(p=>p.id===state.me.id);
+    if(mine) state.myProfile = mine;
     render();
-    await refreshPresence();
   }
 
-  /* ---------------- personal/shared stats ---------------- */
-  async function refreshStats(){
-    try{
-      const rows = await sb('stats?select=*');
-      state.allStats = (rows||[]).map(r=>({id:r.user_id, name:r.name,
-        focusMinutes:Number(r.focus_minutes)||0, focusCycles:r.focus_cycles||0,
-        streak:r.streak||0, lastActiveDate:r.last_active_date}));
-    }catch(e){ console.error(e); }
-    if(state.me){
-      const mine = state.allStats.find(s=>s.id===state.me.userId);
-      if(mine) state.myStats = mine;
-    }
-  }
-
-  async function bumpStats(delta){
-    if(!state.me) return;
-    let s = {focusMinutes:0, focusCycles:0, streak:0, lastActiveDate:null};
-    try{
-      const rows = await sb('stats?user_id=eq.'+encodeURIComponent(state.me.userId)+'&select=*');
-      if(rows && rows[0]){
-        const r=rows[0];
-        s = {focusMinutes:Number(r.focus_minutes)||0, focusCycles:r.focus_cycles||0,
-          streak:r.streak||0, lastActiveDate:r.last_active_date};
-      }
-    }catch(e){ console.error(e); }
-    s.focusMinutes = (s.focusMinutes||0) + (delta.minutes||0);
-    s.focusCycles = (s.focusCycles||0) + (delta.cycles||0);
+  async function touchActivity(deltaMinutes, deltaCycles){
+    if(!state.me || !state.myProfile) return;
+    const p = state.myProfile;
     const today = todayStr();
-    if(s.lastActiveDate !== today){
+    let streak = p.streak||0, lastActive = p.last_active_date;
+    if(lastActive !== today){
       const y = new Date(); y.setDate(y.getDate()-1);
-      s.streak = (s.lastActiveDate===todayStr(y)) ? (s.streak||0)+1 : 1;
-      s.lastActiveDate = today;
+      streak = (lastActive === todayStr(y)) ? streak+1 : 1;
+      lastActive = today;
     }
-    s.name = state.me.name; s.id = state.me.userId;
-    state.myStats = s;
+    const patch = {
+      streak, last_active_date: lastActive,
+      focus_minutes: (p.focus_minutes||0) + (deltaMinutes||0),
+      focus_cycles: (p.focus_cycles||0) + (deltaCycles||0)
+    };
+    state.myProfile = Object.assign({}, p, patch);
     renderMyPanel();
-    try{
-      await sb('stats?on_conflict=user_id', {method:'POST', headers:{Prefer:'resolution=merge-duplicates'},
-        body: JSON.stringify({user_id:s.id, name:s.name, focus_minutes:s.focusMinutes,
-          focus_cycles:s.focusCycles, streak:s.streak, last_active_date:s.lastActiveDate})});
-    }catch(e){ console.error(e); }
+    const {data, error} = await supa.from('profiles').update(patch).eq('id', state.me.id).select().single();
+    if(error) console.error(error); else state.myProfile = data;
   }
 
   /* ---------------- rendering ---------------- */
@@ -598,10 +765,11 @@
     el('progFill').style.width = total ? (done/total*100)+'%' : '0%';
 
     bindCardButtons();
-    // datalist
-    const areas=[...new Set(cards.map(c=>c.area).filter(Boolean))].sort();
+    // datalist (sugestões do catálogo + áreas já usadas no quadro)
+    const areas=[...new Set([...CAT_AREAS, ...cards.map(c=>c.area).filter(Boolean)])].sort();
     el('areaList').innerHTML = areas.map(a=>`<option value="${esc(a)}">`).join('');
 
+    renderPresence();
     renderMyPanel();
   }
 
@@ -609,28 +777,34 @@
 
   function scoreOf(entry){ return (entry.completed||0) + (entry.reviews||0); }
 
+  function profileName(ownerId){
+    if(state.me && ownerId===state.me.id) return (state.myProfile&&state.myProfile.display_name) || 'Você';
+    const p = state.profiles.find(x=>x.id===ownerId);
+    return p ? p.display_name : '—';
+  }
+
   function renderMyPanel(){
-    // aggregate completed/reviews per user from card history
+    // conta concluídos/revisões por dono, a partir dos próprios cards (visíveis a todos)
     const byUser = new Map();
     state.cards.forEach(c=>{
-      if(!c.completedBy) return;
-      const s = byUser.get(c.completedBy.id) || {id:c.completedBy.id, name:c.completedBy.name, completed:0, reviews:0};
-      s.completed++; s.reviews += (c.reviewsDone||0); s.name = c.completedBy.name;
-      byUser.set(c.completedBy.id, s);
+      if(c.status!=='done' && c.status!=='review') return;
+      const s = byUser.get(c.ownerId) || {id:c.ownerId, completed:0, reviews:0};
+      s.completed++; s.reviews += (c.reviewsDone||0);
+      byUser.set(c.ownerId, s);
     });
-    // merge in shared focus/streak stats (also picks up people with stats but no completions yet)
-    state.allStats.forEach(s=>{
-      const e = byUser.get(s.id) || {id:s.id, name:s.name, completed:0, reviews:0};
-      e.name = s.name || e.name; e.focusMinutes = s.focusMinutes||0; e.streak = s.streak||0;
-      byUser.set(s.id, e);
+    // combina com foco/sequência de cada perfil (pega também quem ainda não concluiu nada)
+    state.profiles.forEach(p=>{
+      const e = byUser.get(p.id) || {id:p.id, completed:0, reviews:0};
+      e.name = p.display_name; e.focusMinutes = Number(p.focus_minutes)||0; e.streak = p.streak||0;
+      byUser.set(p.id, e);
     });
 
-    if(state.me){
-      const mine = byUser.get(state.me.userId) || {completed:0, reviews:0};
+    if(state.me && state.myProfile){
+      const mine = byUser.get(state.me.id) || {completed:0, reviews:0};
       el('myDone').textContent = mine.completed||0;
       el('myReviews').textContent = mine.reviews||0;
-      el('myStreak').textContent = (state.myStats.streak||0)+'d';
-      el('myFocus').textContent = fmtMin(state.myStats.focusMinutes||0);
+      el('myStreak').textContent = (state.myProfile.streak||0)+'d';
+      el('myFocus').textContent = fmtMin(state.myProfile.focus_minutes||0);
     }
 
     const ranked = [...byUser.values()].filter(e=>scoreOf(e)>0 || (e.focusMinutes||0)>0)
@@ -638,7 +812,7 @@
     const list = el('rankList');
     if(!ranked.length){ list.innerHTML = '<span class="none">ainda sem dados…</span>'; return; }
     list.innerHTML = ranked.map((e,i)=>{
-      const me = state.me && e.id===state.me.userId;
+      const me = state.me && e.id===state.me.id;
       return `<div class="rank-row ${me?'me':''}">
         <span class="pos">${i+1}</span>
         <span class="nm">${esc(e.name||'—')}</span>
@@ -648,36 +822,39 @@
   }
 
   function cardHTML(c){
-    const mine = state.me && c.ownerId===state.me.userId;
+    const mine = state.me && c.ownerId===state.me.id;
+    const owner = profileName(c.ownerId);
     let who='';
     if(c.status==='todo'){
-      who = `criado por ${esc(c.ownerName||'—')}`;
+      who = `criado por ${esc(owner)}`;
     }else if(c.status==='doing'){
-      who = `<span class="act">▸ ${esc(c.activeName||c.ownerName||'—')}</span> estudando`;
+      who = `<span class="act">▸ ${esc(owner)}</span> estudando`;
     }else if(c.status==='review'){
-      who = `<span class="act">🔁</span> aguardando revisão — última vez por ${esc((c.completedBy&&c.completedBy.name)||'—')}`;
+      who = `<span class="act">🔁</span> aguardando revisão — ${esc(owner)}`;
     }else{
-      who = `<span class="act">✓</span> concluído por ${esc((c.completedBy&&c.completedBy.name)||c.activeName||c.ownerName||'—')}`;
+      who = `<span class="act">✓</span> concluído por ${esc(owner)}`;
     }
     let actions='';
-    if(c.status==='todo'){
-      actions += `<button class="act-btn pick" data-move="doing" data-id="${c.id}">Pegar p/ estudar</button>`;
-    }else if(c.status==='doing'){
-      actions += `<button class="act-btn go" data-move="done" data-id="${c.id}">Concluí ✓</button>`;
-      actions += `<button class="act-btn" data-move="todo" data-id="${c.id}">Devolver</button>`;
-    }else if(c.status==='review'){
-      actions += `<button class="act-btn pick" data-move="doing" data-id="${c.id}">Revisar agora</button>`;
-    }else{
-      actions += `<button class="act-btn" data-move="review" data-id="${c.id}">Marcar p/ revisão</button>`;
+    if(mine){
+      if(c.status==='todo'){
+        actions += `<button class="act-btn pick" data-move="doing" data-id="${c.id}">Começar a estudar</button>`;
+      }else if(c.status==='doing'){
+        actions += `<button class="act-btn go" data-move="done" data-id="${c.id}">Concluí ✓</button>`;
+        actions += `<button class="act-btn" data-move="todo" data-id="${c.id}">Devolver</button>`;
+      }else if(c.status==='review'){
+        actions += `<button class="act-btn pick" data-move="doing" data-id="${c.id}">Revisar agora</button>`;
+      }else{
+        actions += `<button class="act-btn" data-move="review" data-id="${c.id}">Marcar p/ revisão</button>`;
+      }
+      actions += `<button class="act-btn del" data-del="${c.id}" title="Apagar">Apagar</button>`;
     }
-    if(mine) actions += `<button class="act-btn del" data-del="${c.id}" title="Apagar (seu assunto)">Apagar</button>`;
 
     const badge = c.reviewsDone ? `<span class="revbadge">🔁 ${c.reviewsDone}x</span>` : '';
     return `<div class="card ${c.status}">
       ${c.area?`<span class="area">${esc(c.area)}</span>`:''}${badge}
       <div class="subj">${esc(c.subject)}</div>
       <div class="who">${who}</div>
-      <div class="card-actions">${actions}</div>
+      ${actions?`<div class="card-actions">${actions}</div>`:''}
     </div>`;
   }
   function emptyHTML(msg){ return `<div class="empty">${esc(msg)}</div>`; }
@@ -704,89 +881,64 @@
   /* ---------------- actions ---------------- */
   async function moveCard(id, to){
     const card = state.cards.find(x=>x.id===id);
-    if(!card) return;
+    if(!card || card.ownerId!==state.me.id) return;
     const from = card.status;
     const patch = { status:to, moved_at:Date.now() };
     if(to==='doing'){ patch.review_cycle = (from==='review'); }
-    if(to==='doing' || to==='done'){ patch.active_name = state.me?state.me.name:card.activeName; }
-    if(to==='todo'){ patch.active_name = null; }
-    if(to==='review'){ patch.active_name = null; }
     let wasReviewCompletion=false;
-    if(to==='done'){
-      patch.completed_by_id = state.me ? state.me.userId : (card.completedBy&&card.completedBy.id)||null;
-      patch.completed_by_name = state.me ? state.me.name : (card.completedBy&&card.completedBy.name)||null;
-      if(card.reviewCycle){ patch.reviews_done=(card.reviewsDone||0)+1; patch.review_cycle=false; wasReviewCompletion=true; }
+    if(to==='done' && card.reviewCycle){
+      patch.reviews_done = (card.reviewsDone||0)+1; patch.review_cycle=false; wasReviewCompletion=true;
     }
-    try{
-      const rows = await sb('cards?id=eq.'+encodeURIComponent(id), {method:'PATCH',
-        headers:{Prefer:'return=representation'}, body: JSON.stringify(patch)});
-      if(rows && rows[0]){
-        const idx = state.cards.findIndex(x=>x.id===id);
-        if(idx>=0) state.cards[idx] = rowToCard(rows[0]);
-      }
-    }catch(e){ console.error(e); toast('Não deu pra salvar — verifique sua conexão.'); return; }
+    const {data, error} = await supa.from('cards').update(patch).eq('id', id).select().single();
+    if(error){ console.error(error); toast('Não deu pra salvar — verifique sua conexão.'); return; }
+    const idx = state.cards.findIndex(x=>x.id===id);
+    if(idx>=0) state.cards[idx] = rowToCard(data);
     render();
     if(to==='done') toast(wasReviewCompletion ? 'Revisão concluída — mandou bem! 🎯' : 'Assunto concluído — mandou bem! 🎯');
     if(to==='doing') toast('Bom estudo! Foco total. 🔥');
     if(to==='review') toast('Marcado para revisão. Volte quando quiser reforçar. 🔁');
-    if(state.me && (to==='doing' || to==='done')) bumpStats({});
+    if(to==='doing' || to==='done') touchActivity(0,0);
   }
 
   async function deleteCard(id){
     const c=state.cards.find(x=>x.id===id);
-    if(!c) return;
-    if(!state.me || c.ownerId!==state.me.userId){ toast('Você só pode apagar assuntos que você criou.'); return; }
-    if(!confirm(`Apagar "${c.subject}"? Isso remove o assunto para todos.`)) return;
-    try{ await sb('cards?id=eq.'+encodeURIComponent(id), {method:'DELETE'}); }
-    catch(e){ console.error(e); toast('Não deu pra apagar — verifique sua conexão.'); return; }
+    if(!c || c.ownerId!==state.me.id) return;
+    if(!confirm(`Apagar "${c.subject}"? Isso remove o assunto para sempre.`)) return;
+    const {error} = await supa.from('cards').delete().eq('id', id);
+    if(error){ console.error(error); toast('Não deu pra apagar — verifique sua conexão.'); return; }
     state.cards = state.cards.filter(x=>x.id!==id);
     render();
     toast('Assunto removido.');
   }
 
   async function addCard(subject, area){
-    const card={id:uid('c'), subject, area:area||'Geral', status:'todo',
-      ownerId:state.me.userId, ownerName:state.me.name, activeName:null,
-      createdAt:Date.now(), movedAt:Date.now()};
-    try{
-      const rows = await sb('cards', {method:'POST', headers:{Prefer:'return=representation'},
-        body: JSON.stringify(cardToRow(card))});
-      state.cards.push(rows && rows[0] ? rowToCard(rows[0]) : card);
-    }catch(e){ console.error(e); toast('Não deu pra adicionar — verifique sua conexão.'); return; }
+    const row = { id:uid('c'), subject, area:area||'Geral', status:'todo', owner_id:state.me.id,
+      reviews_done:0, review_cycle:false, created_at:Date.now(), moved_at:Date.now() };
+    const {data, error} = await supa.from('cards').insert(row).select().single();
+    if(error){ console.error(error); toast('Não deu pra adicionar — verifique sua conexão.'); return; }
+    state.cards.push(rowToCard(data));
     render();
     toast('Assunto adicionado à fila.');
   }
 
-  /* ---------------- presence ---------------- */
+  /* ---------------- presença ---------------- */
   async function heartbeat(){
     if(!state.me) return;
-    try{
-      await sb('presence?on_conflict=user_id', {method:'POST', headers:{Prefer:'resolution=merge-duplicates'},
-        body: JSON.stringify({user_id:state.me.userId, name:state.me.name, at:Date.now()})});
-    }catch(e){ console.error(e); }
+    const {error} = await supa.from('profiles').update({last_seen:Date.now()}).eq('id', state.me.id);
+    if(!error && state.myProfile) state.myProfile.last_seen = Date.now();
   }
-  async function refreshPresence(){
-    let rows=[];
-    try{ rows = await sb('presence?select=*'); }catch(e){ console.error(e); }
-    const now=Date.now(); const live=[];
-    (rows||[]).forEach(p=>{
-      const at = Number(p.at)||0;
-      if(now - at < 60000) live.push({id:p.user_id, name:p.name, at});
-      else if(state.me && p.user_id===state.me.userId){ /* keep own */ }
-      else if(now - at > 15*60000){ sb('presence?user_id=eq.'+encodeURIComponent(p.user_id), {method:'DELETE'}).catch(()=>{}); }
-    });
-    live.sort((a,b)=> a.name.localeCompare(b.name));
-    renderPresence(live);
-  }
-  function renderPresence(live){
+  function renderPresence(){
+    const now=Date.now();
+    const live = state.profiles.filter(p=> now-(p.last_seen||0) < 60000)
+      .sort((a,b)=> a.display_name.localeCompare(b.display_name));
     const wrap=el('presence');
     let html='<span class="lbl">Na sala:</span>';
     if(!live.length){ html+='<span class="none">só você por enquanto…</span>'; }
     else{
       html += live.map(p=>{
-        const me = state.me && p.name===state.me.name;
+        const me = state.me && p.id===state.me.id;
         return `<span class="chip-who ${me?'me':''}">
-          <span class="av" style="background:${avColor(p.name)}">${esc(initials(p.name))}</span>${esc(p.name)}</span>`;
+          <span class="av" style="background:${avColor(p.display_name)}">${esc(initials(p.display_name))}</span>${esc(p.display_name)}</span>`;
       }).join('');
     }
     wrap.innerHTML=html;
@@ -813,36 +965,17 @@
   /* ---------------- loops ---------------- */
   function startLoops(){
     heartbeat();
-    setInterval(refresh, 8000);        // board + presence
-    setInterval(heartbeat, 20000);     // keep-alive
-    setInterval(renderCountdown, 3600000);
-    window.addEventListener('beforeunload', ()=>{
-      if(!state.me) return;
-      try{
-        fetch(SB_URL+'/rest/v1/presence?user_id=eq.'+encodeURIComponent(state.me.userId), {
-          method:'DELETE', keepalive:true,
-          headers:{apikey:SB_KEY, Authorization:'Bearer '+SB_KEY}
-        });
-      }catch(e){}
-    });
+    loopTimer = setInterval(refresh, 8000);
+    hbTimer = setInterval(heartbeat, 20000);
+    cdTimer = setInterval(renderCountdown, 3600000);
+  }
+  function stopLoops(){
+    clearInterval(loopTimer); clearInterval(hbTimer); clearInterval(cdTimer);
+    loopTimer=hbTimer=cdTimer=null;
   }
 
   /* ---------------- UI wiring ---------------- */
   function wireUI(){
-    // gate
-    const enter=()=>{
-      const v=el('nameInput').value.trim();
-      if(!v){ el('nameInput').focus(); return; }
-      const userId = (state.me&&state.me.userId) || uid('u');
-      state.me={userId, name:v};
-      localStorage.setItem('me', JSON.stringify(state.me));
-      el('gate').hidden=true;
-      heartbeat(); refresh();
-    };
-    el('enterBtn').onclick=enter;
-    el('nameInput').addEventListener('keydown',e=>{ if(e.key==='Enter') enter(); });
-    setTimeout(()=>{ if(!el('gate').hidden) el('nameInput').focus(); }, 200);
-
     // add
     el('btnAdd').onclick=()=>{ el('addModal').hidden=false; el('subjInput').value=''; el('areaInput').value=''; el('subjInput').focus(); };
     el('cancelAdd').onclick=()=> el('addModal').hidden=true;
@@ -862,27 +995,51 @@
     el('saveSet').onclick=async ()=>{
       state.cfg.sala=el('setSala').value.trim()||'Sala CBM-MA';
       state.cfg.date=el('setDate').value||state.cfg.date;
-      try{
-        await sb('config?id=eq.1', {method:'PATCH', body: JSON.stringify({sala:state.cfg.sala, exam_date:state.cfg.date})});
-      }catch(e){ console.error(e); toast('Não deu pra salvar os ajustes — verifique sua conexão.'); return; }
+      const {error} = await supa.from('config').update({sala:state.cfg.sala, exam_date:state.cfg.date}).eq('id',1);
+      if(error){ console.error(error); toast('Não deu pra salvar os ajustes — verifique sua conexão.'); return; }
       applyConfig(); el('setModal').hidden=true; toast('Ajustes salvos para a sala.');
+    };
+
+    // minha conta
+    el('hdAv').onclick=()=>{
+      el('accEmail').textContent = state.me.email;
+      el('accName').value = (state.myProfile && state.myProfile.display_name) || '';
+      el('accModal').hidden=false;
+    };
+    el('cancelAcc').onclick=()=> el('accModal').hidden=true;
+    el('accSaveName').onclick=async ()=>{
+      const nm = el('accName').value.trim(); if(!nm) return;
+      const {data, error} = await supa.from('profiles').update({display_name:nm}).eq('id', state.me.id).select().single();
+      if(error){ console.error(error); toast('Não deu pra salvar o nome.'); return; }
+      state.myProfile = data; renderHeaderUser(); render();
+      toast('Nome atualizado.');
+    };
+    el('btnLogout').onclick=async ()=>{
+      if(!confirm('Sair da conta?')) return;
+      await supa.auth.signOut();
+      location.reload();
+    };
+    el('btnDeleteAccount').onclick=async ()=>{
+      if(!confirm('Isso apaga sua conta, seus assuntos e suas estatísticas para sempre. Tem certeza?')) return;
+      if(!confirm('Confirmando de novo: não tem como desfazer. Excluir mesmo?')) return;
+      const {error} = await supa.rpc('delete_my_account');
+      if(error){ console.error(error); toast('Não deu pra excluir a conta. Tente de novo.'); return; }
+      await supa.auth.signOut();
+      location.reload();
     };
 
     // close modal on veil click
     document.querySelectorAll('.veil').forEach(v=>{
-      if(v.id==='gate') return;
       v.addEventListener('click',e=>{ if(e.target===v) v.hidden=true; });
     });
   }
 
   /* ---------------- pomodoro (personal) ---------------- */
   function initPomodoro(){
-    let dur={focus:25*60, break:5*60};
-    let mode='focus', left=dur.focus, running=false, cycles=0, timer=null;
+    const dur={focus:25*60, break:5*60};
+    let mode='focus', left=dur.focus, running=false, timer=null;
     const time=el('pomoTime'), meta=el('pomoMeta'), toggle=el('pomoToggle'),
           reset=el('pomoReset'), cyc=el('pomoCyc'), pomo=el('pomo');
-    // restore cycles
-    { const r=localStorage.getItem('pomo:cycles'); if(r){ cycles=parseInt(r)||0; cyc.textContent='×'+cycles; } }
 
     function paint(){
       const m=String(Math.floor(left/60)).padStart(2,'0');
@@ -892,14 +1049,15 @@
       pomo.classList.toggle('break', mode==='break');
       toggle.textContent = running?'❚❚':'▶';
       toggle.classList.toggle('play', !running);
+      cyc.textContent = '×'+((state.myProfile&&state.myProfile.focus_cycles)||0);
     }
-    function tick(){
+    async function tick(){
       left--;
       if(left<0){
-        if(mode==='focus'){ cycles++; cyc.textContent='×'+cycles; localStorage.setItem('pomo:cycles', String(cycles));
-          bumpStats({minutes:dur.focus/60, cycles:1});
-          mode='break'; left=dur.break; toast('Ciclo de foco concluído. Respira 5 min. ☕'); }
-        else { mode='focus'; left=dur.focus; toast('Pausa acabou. De volta ao foco! 🔥'); }
+        if(mode==='focus'){
+          await touchActivity(dur.focus/60, 1);
+          mode='break'; left=dur.break; toast('Ciclo de foco concluído. Respira 5 min. ☕');
+        } else { mode='focus'; left=dur.focus; toast('Pausa acabou. De volta ao foco! 🔥'); }
       }
       paint();
     }
@@ -920,6 +1078,6 @@
   }
 
   /* ---------------- go ---------------- */
-  init();
+  boot();
 })();
 </script>
