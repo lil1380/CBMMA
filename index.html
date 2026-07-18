@@ -90,7 +90,10 @@
   .mypanel{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-bottom:18px}
   .mystats{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
   .mystats h3, .rank h3{font-family:"Oswald","Arial Narrow","Helvetica Neue",Arial,sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.06em;
-    font-size:13px;margin:0 0 12px;color:var(--muted)}
+    font-size:13px;margin:0 0 12px;color:var(--muted);display:flex;align-items:center;justify-content:space-between}
+  .pts-badge{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:0;
+    text-transform:none;color:var(--amber);background:rgba(242,167,54,.15);border:1px solid rgba(242,167,54,.4);
+    border-radius:20px;padding:3px 10px}
   .mystats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
   .mystat{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:8px;padding:9px 11px}
   .mystat .k{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
@@ -387,7 +390,7 @@
   <!-- ===== Meu Progresso ===== -->
   <div class="mypanel">
     <div class="mystats">
-      <h3>Meu progresso</h3>
+      <h3>Meu progresso <span class="pts-badge" id="myPontos">0 pts</span></h3>
       <div class="mystats-grid">
         <div class="mystat"><div class="k">Concluídos</div><div class="v" id="myDone">0</div></div>
         <div class="mystat rev"><div class="k">Revisões</div><div class="v" id="myReviews">0</div></div>
@@ -1076,21 +1079,29 @@
 
   // opts: {minutes, cycles, subjects} — cada um opcional, soma no total geral
   // e também no contador do dia (que zera sozinho quando muda o dia).
+  const STREAK_MARKS = new Set([3,5,7,10,14,21,30,50,75,100]);
+
   async function touchActivity(opts){
     opts = opts || {};
     if(!state.me || !state.myProfile) return;
     const p = state.myProfile;
     const today = todayStr();
-    let streak = p.streak||0, lastActive = p.last_active_date;
+    let streak = p.streak||0, lastActive = p.last_active_date, streakChanged=false;
     if(lastActive !== today){
       const y = new Date(); y.setDate(y.getDate()-1);
       streak = (lastActive === todayStr(y)) ? streak+1 : 1;
       lastActive = today;
+      streakChanged = true;
     }
     let dailyDay = p.daily_day, dailySubjects = p.daily_subjects_done||0, dailyMinutes = p.daily_minutes||0;
     if(dailyDay !== today){ dailyDay = today; dailySubjects = 0; dailyMinutes = 0; }
+    const goalType = p.daily_goal_type || 'subjects';
+    const goalVal = Number(p.daily_goal_value) || (goalType==='time'?60:3);
+    const prevProgress = goalType==='time' ? dailyMinutes : dailySubjects;
     dailySubjects += (opts.subjects||0);
     dailyMinutes += (opts.minutes||0);
+    const newProgress = goalType==='time' ? dailyMinutes : dailySubjects;
+    const justHitGoal = prevProgress < goalVal && newProgress >= goalVal;
     const patch = {
       streak, last_active_date: lastActive,
       focus_minutes: (p.focus_minutes||0) + (opts.minutes||0),
@@ -1099,6 +1110,10 @@
     };
     state.myProfile = Object.assign({}, p, patch);
     renderMyPanel();
+    const msgs=[];
+    if(streakChanged && STREAK_MARKS.has(streak)) msgs.push('🔥 '+streak+' dias seguidos!');
+    if(justHitGoal) msgs.push('🎯 Meta do dia batida!');
+    if(msgs.length) toast(msgs.join(' · ')+' Pontos bônus liberados.');
     const {data, error} = await supa.from('profiles').update(patch).eq('id', state.me.id).select().single();
     if(error) console.error(error); else state.myProfile = data;
   }
@@ -1257,7 +1272,21 @@
 
   const fmtMin = (m)=>{ m=Math.round(m||0); return m<60 ? m+'min' : Math.floor(m/60)+'h'+(m%60?' '+(m%60)+'min':''); };
 
-  function scoreOf(entry){ return (entry.completed||0) + (entry.reviews||0); }
+  // Pontos: base por esforço acumulado + bônus por sequência de dias + bônus
+  // por passar da meta do dia (mais horas/assuntos naquele dia valem mais).
+  function calcPontos(e){
+    const base = (e.completed||0)*10 + (e.reviews||0)*5 + Math.floor((e.focusMinutes||0)/5);
+    const bonusSequencia = (e.streak||0)*5;
+    let bonusHoje = 0;
+    if(e.dailyIsToday){
+      if(e.dailyGoalType==='time' && e.dailyMinutes > e.dailyGoalValue){
+        bonusHoje = Math.floor((e.dailyMinutes-e.dailyGoalValue)/5)*2;
+      } else if(e.dailyGoalType!=='time' && e.dailySubjects > e.dailyGoalValue){
+        bonusHoje = (e.dailySubjects-e.dailyGoalValue)*10;
+      }
+    }
+    return base + bonusSequencia + bonusHoje;
+  }
 
   function profileName(ownerId){
     if(state.me && ownerId===state.me.id) return (state.myProfile&&state.myProfile.display_name) || 'Você';
@@ -1288,24 +1317,32 @@
       s.completed++; s.reviews += (c.reviewsDone||0);
       byUser.set(c.ownerId, s);
     });
-    // combina com foco/sequência de cada perfil (pega também quem ainda não concluiu nada)
+    // combina com foco/sequência/meta do dia de cada perfil (pega também quem ainda não concluiu nada)
+    const today = todayStr();
     state.profiles.forEach(p=>{
       const e = byUser.get(p.id) || {id:p.id, completed:0, reviews:0};
       e.name = p.display_name; e.focusMinutes = Number(p.focus_minutes)||0; e.streak = p.streak||0;
+      e.dailyIsToday = p.daily_day === today;
+      e.dailyMinutes = Number(p.daily_minutes)||0;
+      e.dailySubjects = p.daily_subjects_done||0;
+      e.dailyGoalType = p.daily_goal_type || 'subjects';
+      e.dailyGoalValue = Number(p.daily_goal_value) || (e.dailyGoalType==='time'?60:3);
       byUser.set(p.id, e);
     });
+    byUser.forEach(e=>{ e.pontos = calcPontos(e); });
 
     if(state.me && state.myProfile){
-      const mine = byUser.get(state.me.id) || {completed:0, reviews:0};
+      const mine = byUser.get(state.me.id) || {completed:0, reviews:0, pontos:0};
       el('myDone').textContent = mine.completed||0;
       el('myReviews').textContent = mine.reviews||0;
       el('myStreak').textContent = (state.myProfile.streak||0)+'d';
       el('myFocus').textContent = fmtMin(state.myProfile.focus_minutes||0);
+      el('myPontos').textContent = (mine.pontos||0)+' pts';
     }
     renderDailyGoal();
 
-    const ranked = [...byUser.values()].filter(e=>scoreOf(e)>0 || (e.focusMinutes||0)>0)
-      .sort((a,b)=> scoreOf(b)-scoreOf(a) || (b.focusMinutes||0)-(a.focusMinutes||0)).slice(0,6);
+    const ranked = [...byUser.values()].filter(e=> e.pontos>0)
+      .sort((a,b)=> b.pontos-a.pontos).slice(0,6);
     const list = el('rankList');
     if(!ranked.length){ list.innerHTML = '<span class="none">ainda sem dados…</span>'; return; }
     list.innerHTML = ranked.map((e,i)=>{
@@ -1313,7 +1350,7 @@
       return `<div class="rank-row ${me?'me':''}">
         <span class="pos">${i+1}</span>
         <span class="nm">${me ? esc(e.name||'—') : nameHtml(e.name||'—')}</span>
-        <span class="sc">${e.completed||0}✓ ${e.reviews?('· '+e.reviews+'🔁'):''}</span>
+        <span class="sc">${e.pontos}pts</span>
       </div>`;
     }).join('');
   }
