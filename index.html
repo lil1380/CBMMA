@@ -104,6 +104,23 @@
   .rank-row .sc{font-family:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;color:var(--muted);font-size:12px}
   .rank .none{color:var(--faint);font-size:12.5px;font-style:italic}
 
+  /* ---------- Estatísticas do edital ---------- */
+  .stats-panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:18px}
+  .stats-panel h3{font-family:"Oswald","Arial Narrow","Helvetica Neue",Arial,sans-serif;font-weight:600;text-transform:uppercase;
+    letter-spacing:.06em;font-size:13px;margin:0 0 12px;color:var(--muted)}
+  .stats-summary{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .stat-chip{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:8px;padding:9px 14px;
+    text-align:center;flex:1;min-width:110px}
+  .stat-chip .k{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
+  .stat-chip .v{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600;font-size:18px;margin-top:2px}
+  .stats-body{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .stat-group h4{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin:0 0 10px}
+  .stat-area{margin-bottom:9px}
+  .sa-head{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px}
+  .sa-head .sa-n{font-family:"IBM Plex Mono",ui-monospace,monospace;color:var(--ink)}
+  .sa-bar{height:6px;background:var(--bg);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .sa-bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--green));border-radius:10px}
+
   /* ---------- Mural da sala (bot + feed) ---------- */
   .mural{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:18px}
   .mural h3{font-family:"Oswald","Arial Narrow","Helvetica Neue",Arial,sans-serif;font-weight:600;text-transform:uppercase;
@@ -298,6 +315,7 @@
   @media (max-width:860px){
     .board{grid-template-columns:1fr}
     .mypanel{grid-template-columns:1fr}
+    .stats-body{grid-template-columns:1fr}
     .head-metrics{margin-left:0;width:100%}
     .metric{flex:1;min-width:0}
     .pomo{left:16px;right:16px;bottom:12px}
@@ -359,6 +377,17 @@
       <h3>Quem mais estudou</h3>
       <div id="rankList"><span class="none">ainda sem dados…</span></div>
     </div>
+  </div>
+
+  <!-- ===== Estatísticas do edital ===== -->
+  <div class="stats-panel">
+    <h3>📊 Estatísticas do edital</h3>
+    <div class="stats-summary">
+      <div class="stat-chip"><div class="k">Estudado 1x+</div><div class="v" id="statDone">0/0</div></div>
+      <div class="stat-chip"><div class="k">Revisados</div><div class="v" id="statReview">0</div></div>
+      <div class="stat-chip"><div class="k">Não iniciados</div><div class="v" id="statTodo">0</div></div>
+    </div>
+    <div id="statsBody" class="stats-body"></div>
   </div>
 
   <!-- ===== Mural da sala ===== -->
@@ -520,6 +549,11 @@
       <div id="pomoSessionsList" class="pomo-sessions"><span class="hint">nenhuma sessão registrada ainda</span></div>
     </div>
 
+    <div class="field">
+      <label>Edital</label>
+      <button class="btn-ghost" id="btnImportEdital" style="width:100%">Importar assuntos do edital que faltam</button>
+    </div>
+
     <div class="danger-zone" id="adminZone" hidden>
       <h4>Administração</h4>
       <p>Gere um código de reset de senha válido por 24h para outra pessoa da sala. Entregue o código fora do sistema (WhatsApp, presencial).</p>
@@ -642,16 +676,8 @@
   const usernameEmail = (u)=> u+'@sala.local';
 
   /* ---------------- catálogo de sugestões (CBM-MA) ---------------- */
-  const CATALOG = [
-    ["Língua Portuguesa", ["Interpretação de texto","Ortografia e acentuação","Classes de palavras","Concordância verbal e nominal","Regência verbal e nominal","Crase","Pontuação","Figuras de linguagem","Semântica e sinônimos","Coesão e coerência"]],
-    ["Matemática", ["Conjuntos numéricos","Razão e proporção","Regra de três","Porcentagem","Juros simples e compostos","Equações do 1º e 2º grau","Geometria plana","Sistema métrico decimal","Probabilidade"]],
-    ["Raciocínio Lógico", ["Proposições e conectivos","Tabelas-verdade","Argumentos e validade","Sequências lógicas","Diagramas lógicos"]],
-    ["História e Geografia do MA", ["Formação histórica do Maranhão","Adesão à Independência (28 de julho)","Economia maranhense","Aspectos físicos e clima","Hidrografia e vegetação","Capital e municípios"]],
-    ["Atualidades", ["Atualidades nacionais","Atualidades do Maranhão","Meio ambiente","Cidadania e sociedade"]],
-    ["Informática", ["Windows","Editor de textos (Word)","Planilhas (Excel)","Internet e navegadores","Segurança da informação"]],
-    ["Legislação / Direito", ["CF: princípios fundamentais","Direitos e garantias individuais","Segurança pública (art. 144)","Direitos Humanos"]],
-    ["Inglês", ["Interpretação de texto","Vocabulário","Tempos verbais","Cognatos e falsos cognatos"]]
-  ];
+  const CATALOG = [["Língua Portuguesa", ["Compreensão e interpretação de textos de gêneros variados", "Reconhecimento de tipos e gêneros textuais", "Domínio da ortografia oficial", "Coesão textual: referenciação, substituição, repetição, conectores e outros elementos de sequenciação", "Coesão textual: emprego de tempos e modos verbais", "Emprego das classes de palavras", "Relações de coordenação entre orações e entre termos da oração", "Relações de subordinação entre orações e entre termos da oração", "Emprego dos sinais de pontuação", "Concordância verbal e nominal", "Regência verbal e nominal", "Emprego do sinal indicativo de crase", "Colocação dos pronomes átonos", "Significação das palavras", "Substituição de palavras ou de trechos de texto", "Reorganização da estrutura de orações e de períodos do texto", "Reescrita de textos de diferentes gêneros e níveis de formalidade", "Correspondência oficial: adequação da linguagem ao tipo de documento", "Correspondência oficial: adequação do formato do texto ao gênero"]], ["História do Maranhão", ["França Equinocial: expedição de Daniel de La Touche", "Fundação de São Luís", "Batalha de Guaxenduba", "Capitães-mores do Maranhão", "Invasão holandesa", "Expulsão dos holandeses", "Estado do Maranhão e Grão-Pará: Revolta de Bequimão (causas e objetivos) e Companhia de Comércio do Maranhão e Grão-Pará", "Período do Império: adesão do Maranhão", "Independência do Brasil", "Causas da não adesão: Batalha do Jenipapo", "Balaiada: caracterização e causas do movimento", "Período republicano: adesão do Maranhão à República", "Revolução de 1930 no Maranhão", "Principais fatos políticos, econômicos e sociais no Maranhão na 2ª metade do século XX"]], ["Geografia do Maranhão", ["Localização do estado: superfície, limites, linhas de fronteira, pontos extremos, áreas de proteção ambiental (APA)", "Parques nacionais", "Climas do Maranhão: pluviosidade e temperatura", "Geomorfologia: classificação do relevo maranhense (planaltos, planícies e baixadas)", "Rios maranhenses: bacias dos rios limítrofes (Parnaíba, Gurupi e Tocantins-Araguaia)", "Bacias dos rios genuinamente maranhenses", "Principais formações vegetais: floresta, cerrado e cocais", "Geografia da população: absoluta, densidade demográfica, povoamento, movimentos populacionais", "Agricultura maranhense: caracterização e principais produtos agrícolas; pecuária", "Extrativismo: vegetal, animal e mineral", "Parque industrial: indústrias de base e de transformação", "Setor terciário: comércio, telecomunicações, transportes", "Malha viária", "Portos e aeroportos", "Cultura maranhense"]], ["Língua Estrangeira (Inglês)", ["Compreensão de textos em língua inglesa", "Itens gramaticais relevantes para a compreensão dos conteúdos semânticos"]], ["Raciocínio Lógico", ["Compreensão de estruturas lógicas", "Lógica de argumentação: analogias, inferências, deduções e conclusões", "Proposições simples e compostas", "Tabelas-verdade", "Equivalências lógicas", "Leis de Morgan", "Diagramas lógicos"]], ["Legislação Institucional", ["Lei estadual nº 6.513/1995 — Estatuto dos Policiais Militares e Bombeiros Militares do Maranhão", "Lei estadual nº 10.230/2015 — organização básica do Corpo de Bombeiros Militar do Maranhão", "Lei federal nº 14.751/2023 — disposições gerais aplicáveis aos Corpos de Bombeiros Militares"]], ["Primeiros Socorros", ["Avaliação inicial da vítima", "Suporte básico de vida (SBV)", "Hemorragias", "Fraturas", "Queimaduras", "Obstrução de vias aéreas", "Transporte de vítimas"]], ["Combate a Incêndio", ["Teoria do fogo", "Classes de incêndio", "Métodos de extinção", "Agentes extintores", "Equipamentos básicos de combate a incêndio", "Equipamentos de proteção individual (EPI) e de proteção respiratória (EPR)"]], ["Segurança Contra Incêndio e Pânico", ["Lei estadual nº 11.390/2020 — objetivos", "Lei estadual nº 11.390/2020 — conceitos básicos", "Lei estadual nº 11.390/2020 — competências do Corpo de Bombeiros Militar do Maranhão", "Lei estadual nº 11.390/2020 — medidas de segurança contra incêndio", "Lei estadual nº 11.390/2020 — processo de segurança contra incêndio", "Lei estadual nº 11.390/2020 — certificação", "Lei estadual nº 11.390/2020 — fiscalização"]]];
+  const GRUPOS = {"Conhecimentos Gerais": ["Língua Portuguesa", "História do Maranhão", "Geografia do Maranhão", "Língua Estrangeira (Inglês)", "Raciocínio Lógico"], "Conhecimentos Específicos": ["Legislação Institucional", "Primeiros Socorros", "Combate a Incêndio", "Segurança Contra Incêndio e Pânico"]};
   const CAT_AREAS = CATALOG.map(c=>c[0]);
   const CAT_SUBJECTS = [...new Set(CATALOG.flatMap(c=>c[1]))];
   const SUBJECT_AREA_MAP = new Map();
@@ -712,7 +738,42 @@
     }
     state.me = data.session.user;
     await ensureOwnProfile();
+    await seedCatalogCards();
     await gerarMostrarCodigos();
+  }
+
+  // Popula a fila da conta nova com todo o edital, pra garantir que nada
+  // fique de fora. Só roda uma vez, na criação da conta.
+  // Preenche só o que falta do edital na fila de quem já tem conta (não duplica).
+  async function importarEdital(){
+    const {data: existing, error} = await supa.from('cards').select('subject').eq('owner_id', state.me.id);
+    if(error){ console.error(error); toast('Não deu pra conferir seus assuntos.'); return; }
+    const have = new Set((existing||[]).map(r=> r.subject.trim().toLowerCase()));
+    const now = Date.now();
+    let i=0;
+    const rows = [];
+    CATALOG.forEach(([area, subs])=> subs.forEach(subject=>{
+      if(have.has(subject.trim().toLowerCase())) return;
+      rows.push({ id: uid('c'), subject, area, status:'todo', owner_id: state.me.id,
+        reviews_done:0, review_cycle:false, created_at: now+(i++), moved_at: now });
+    }));
+    if(!rows.length){ toast('Você já tem todos os assuntos do edital na sua fila.'); return; }
+    const {error:err2} = await supa.from('cards').insert(rows);
+    if(err2){ console.error(err2); toast('Não deu pra importar.'); return; }
+    await refresh();
+    toast(rows.length+' assunto(s) importado(s) do edital.');
+  }
+
+  async function seedCatalogCards(){
+    const now = Date.now();
+    let i = 0;
+    const rows = [];
+    CATALOG.forEach(([area, subs])=> subs.forEach(subject=>{
+      rows.push({ id: uid('c'), subject, area, status:'todo', owner_id: state.me.id,
+        reviews_done:0, review_cycle:false, created_at: now+(i++), moved_at: now });
+    }));
+    const {error} = await supa.from('cards').insert(rows);
+    if(error) console.error(error);
   }
 
   async function gerarMostrarCodigos(){
@@ -1003,8 +1064,40 @@
 
     renderPresence();
     renderMyPanel();
+    renderStats();
     renderBot();
     renderFeed();
+  }
+
+  function renderStats(){
+    if(!state.me) return;
+    const mine = state.cards.filter(c=> c.ownerId===state.me.id);
+    const byArea = new Map();
+    CATALOG.forEach(([area, subs])=> byArea.set(area, {total: subs.length, done:0, review:0}));
+    mine.forEach(c=>{
+      const stat = byArea.get(c.area);
+      if(!stat) return; // assunto personalizado fora do edital — não entra na cobertura
+      if(c.status==='done' || c.status==='review'){ stat.done++; if(c.reviewsDone>0) stat.review++; }
+    });
+
+    let totalTopics=0, totalDone=0, totalReviewed=0;
+    byArea.forEach(s=>{ totalTopics+=s.total; totalDone+=s.done; totalReviewed+=s.review; });
+    el('statDone').textContent = totalDone+'/'+totalTopics;
+    el('statReview').textContent = totalReviewed;
+    el('statTodo').textContent = Math.max(0, totalTopics-totalDone);
+
+    const groupHtml = (grupoNome)=>{
+      const areasDoGrupo = GRUPOS[grupoNome] || [];
+      return `<div class="stat-group"><h4>${esc(grupoNome)}</h4>` + areasDoGrupo.map(a=>{
+        const s = byArea.get(a) || {total:0, done:0};
+        const pct = s.total ? Math.round(s.done/s.total*100) : 0;
+        return `<div class="stat-area">
+          <div class="sa-head"><span>${esc(a)}</span><span class="sa-n">${s.done}/${s.total}</span></div>
+          <div class="sa-bar"><i style="width:${pct}%"></i></div>
+        </div>`;
+      }).join('') + `</div>`;
+    };
+    el('statsBody').innerHTML = Object.keys(GRUPOS).map(groupHtml).join('');
   }
 
   function renderBot(){
@@ -1279,6 +1372,11 @@
       el('accModal').hidden=false;
     };
     el('cancelAcc').onclick=()=> el('accModal').hidden=true;
+    el('btnImportEdital').onclick=async ()=>{
+      el('btnImportEdital').disabled=true;
+      await importarEdital();
+      el('btnImportEdital').disabled=false;
+    };
     el('accSaveName').onclick=async ()=>{
       const nm = el('accName').value.trim(); if(!nm) return;
       const {data, error} = await supa.from('profiles').update({display_name:nm}).eq('id', state.me.id).select().single();
