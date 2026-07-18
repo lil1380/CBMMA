@@ -1027,6 +1027,7 @@
     el('histSearch').value = '';
     el('historyModal').hidden = false;
     await loadHistEvents();
+    await backfillMissingStudyEvents();
     renderHistCalendar();
     renderHistSubjects();
   }
@@ -1036,6 +1037,23 @@
       .eq('user_id', state.me.id).order('at', {ascending:false});
     if(error){ console.error(error); histEvents = []; return; }
     histEvents = data || [];
+  }
+
+  // assuntos que já estavam concluídos antes desse painel existir (ou cujo
+  // registro falhou por algum motivo) não têm evento — preenche com base
+  // na própria data em que o card foi movido para "Concluído".
+  async function backfillMissingStudyEvents(){
+    const known = new Set(histEvents.map(ev=>ev.card_id));
+    const missing = state.cards.filter(c=>
+      c.ownerId===state.me.id && c.status==='done' && !known.has(c.id));
+    if(!missing.length) return;
+    const rows = missing.map(c=>({
+      user_id: state.me.id, card_id: c.id, subject: c.subject, area: c.area,
+      event_type: 'estudado', at: c.movedAt || c.createdAt || Date.now()
+    }));
+    const {error} = await supa.from('study_events').insert(rows);
+    if(error){ console.error(error); return; }
+    await loadHistEvents();
   }
 
   function renderHistCalendar(){
