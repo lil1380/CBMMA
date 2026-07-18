@@ -1,7 +1,7 @@
 <!--
   Sala de Estudos — Painel de Prontidão (CBM-MA)
   Coworking de estudos compartilhado por link. Sem chat.
-  Dados coletivos via window.storage (shared=true).
+  Dados coletivos via Supabase (REST/PostgREST), chave anon pública.
 -->
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -393,27 +393,52 @@
 (function(){
   "use strict";
 
-  /* ---------------- storage helpers ---------------- */
-  async function sget(key, shared){
-    try{ const r = await window.storage.get(key, shared); return r ? r.value : null; }
-    catch(e){ return null; }
-  }
-  async function sset(key, val, shared){
-    try{ return await window.storage.set(key, val, shared); }
-    catch(e){ console.error("set fail", key, e); return null; }
-  }
-  async function slist(prefix, shared){
-    try{ const r = await window.storage.list(prefix, shared); return (r && r.keys) ? r.keys : []; }
-    catch(e){ return []; }
-  }
-  async function sdel(key, shared){ try{ await window.storage.delete(key, shared); }catch(e){} }
+  /* ---------------- Supabase REST helpers ---------------- */
+  const SB_URL = 'https://jdyaglgtcqjypnwfjwar.supabase.co';
+  const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpkeWFnbGd0Y3FqeXBud2Zqd2FyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQzMjEwODYsImV4cCI6MjA5OTg5NzA4Nn0.XAeP_7CL4Ot9RE1d6vwYSFvK3WWh45vFD4XJSLnTE94';
 
-  const KEY_CARDS='board:cards', KEY_CFG='board:config', KEY_SEED='board:seeded', KEY_STATS='stats:';
+  async function sb(path, opts){
+    opts = opts || {};
+    const headers = Object.assign({
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer '+SB_KEY,
+      'Content-Type': 'application/json'
+    }, opts.headers||{});
+    const res = await fetch(SB_URL+'/rest/v1/'+path, Object.assign({}, opts, {headers}));
+    if(!res.ok){
+      const body = await res.text().catch(()=>'');
+      throw new Error('Supabase '+res.status+' em '+path+': '+body.slice(0,200));
+    }
+    const ct = res.headers.get('content-type')||'';
+    if(res.status===204 || !ct.includes('application/json')) return null;
+    return res.json();
+  }
+
+  function rowToCard(r){
+    return {
+      id:r.id, subject:r.subject, area:r.area, status:r.status,
+      ownerId:r.owner_id, ownerName:r.owner_name, activeName:r.active_name,
+      completedBy: r.completed_by_id ? {id:r.completed_by_id, name:r.completed_by_name} : null,
+      reviewsDone: r.reviews_done||0, reviewCycle: !!r.review_cycle,
+      createdAt: Number(r.created_at), movedAt: Number(r.moved_at)
+    };
+  }
+  function cardToRow(c){
+    return {
+      id:c.id, subject:c.subject, area:c.area, status:c.status,
+      owner_id:c.ownerId, owner_name:c.ownerName, active_name:c.activeName||null,
+      completed_by_id: c.completedBy ? c.completedBy.id : null,
+      completed_by_name: c.completedBy ? c.completedBy.name : null,
+      reviews_done: c.reviewsDone||0, review_cycle: !!c.reviewCycle,
+      created_at: c.createdAt, moved_at: c.movedAt
+    };
+  }
+
   const uid = (p)=> (p||'')+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
   const todayStr = (d)=> (d||new Date()).toISOString().slice(0,10);
 
   /* ---------------- state ---------------- */
-  const state = { me:null, cards:[], cfg:{sala:'Sala CBM-MA', date:'2026-10-18'}, filter:'all',
+  const state = { me:null, cards:[], cfg:{sala:'Sala CBM-MA', date:'2026-10-18', seeded:false}, filter:'all',
     myStats:{focusMinutes:0, focusCycles:0, streak:0, lastActiveDate:null}, allStats:[] };
 
   /* ---------------- seed data (CBM-MA) ---------------- */
@@ -439,23 +464,33 @@
 
   /* ---------------- init ---------------- */
   async function init(){
-    // personal identity
-    const meRaw = await sget('me', false);
+    // personal identity (per-browser, not shared)
+    const meRaw = localStorage.getItem('me');
     if(meRaw){ try{ state.me = JSON.parse(meRaw); }catch(e){} }
-    if(state.me && state.me.name){ document.getElementById('gate').hidden = true; }
-    else { document.getElementById('gate').hidden = false; }
+    document.getElementById('gate').hidden = !!(state.me && state.me.name);
 
-    await loadConfig();
-    await ensureSeed();
-    await refresh();          // first data pull
-    startLoops();
+    try{
+      await loadConfig();
+      await ensureSeed();
+      await refresh();          // first data pull
+      startLoops();
+    }catch(e){
+      console.error(e);
+      document.querySelector('.wrap').insertAdjacentHTML('afterbegin',
+        '<div style="background:#2a1518;border:1px solid #d8232f;color:#ffbcc0;padding:14px;border-radius:10px;margin-bottom:16px;font-size:14px">Não foi possível conectar ao banco de dados da sala. Detalhe: '+esc(String((e&&e.message)||e))+'</div>');
+    }
     wireUI();
     initPomodoro();
   }
 
   async function loadConfig(){
-    const raw = await sget(KEY_CFG, true);
-    if(raw){ try{ Object.assign(state.cfg, JSON.parse(raw)); }catch(e){} }
+    const rows = await sb('config?id=eq.1&select=*');
+    if(rows && rows[0]){
+      const r=rows[0];
+      state.cfg.sala = r.sala || state.cfg.sala;
+      state.cfg.date = r.exam_date || state.cfg.date;
+      state.cfg.seeded = !!r.seeded;
+    }
     applyConfig();
   }
   function applyConfig(){
@@ -464,18 +499,17 @@
   }
 
   async function ensureSeed(){
-    const seeded = await sget(KEY_SEED, true);
-    const existing = await sget(KEY_CARDS, true);
-    if(seeded || existing) return;
-    await sset(KEY_SEED, '1', true);
+    if(state.cfg.seeded) return;
     const cards = buildSeed('system', 'Sala');
-    await sset(KEY_CARDS, JSON.stringify(cards), true);
+    await sb('cards', {method:'POST', body: JSON.stringify(cards.map(cardToRow))});
+    await sb('config?id=eq.1', {method:'PATCH', body: JSON.stringify({seeded:true})});
+    state.cfg.seeded = true;
   }
 
   /* ---------------- data refresh ---------------- */
   async function refresh(){
-    const raw = await sget(KEY_CARDS, true);
-    if(raw){ try{ state.cards = JSON.parse(raw) || []; }catch(e){ state.cards=[]; } }
+    const rows = await sb('cards?select=*&order=created_at.asc');
+    state.cards = (rows||[]).map(rowToCard);
     await refreshStats();
     render();
     await refreshPresence();
@@ -483,27 +517,29 @@
 
   /* ---------------- personal/shared stats ---------------- */
   async function refreshStats(){
-    const keys = await slist(KEY_STATS, true);
-    const all=[];
-    for(const k of keys){
-      const raw = await sget(k, true);
-      if(!raw) continue;
-      let s; try{ s=JSON.parse(raw); }catch(e){ continue; }
-      all.push(Object.assign({id:k.slice(KEY_STATS.length)}, s));
-    }
-    state.allStats = all;
+    try{
+      const rows = await sb('stats?select=*');
+      state.allStats = (rows||[]).map(r=>({id:r.user_id, name:r.name,
+        focusMinutes:Number(r.focus_minutes)||0, focusCycles:r.focus_cycles||0,
+        streak:r.streak||0, lastActiveDate:r.last_active_date}));
+    }catch(e){ console.error(e); }
     if(state.me){
-      const mine = all.find(s=>s.id===state.me.userId);
+      const mine = state.allStats.find(s=>s.id===state.me.userId);
       if(mine) state.myStats = mine;
     }
   }
 
   async function bumpStats(delta){
     if(!state.me) return;
-    const key = KEY_STATS+state.me.userId;
-    const raw = await sget(key, true);
-    let s = {name:state.me.name, focusMinutes:0, focusCycles:0, streak:0, lastActiveDate:null};
-    if(raw){ try{ Object.assign(s, JSON.parse(raw)); }catch(e){} }
+    let s = {focusMinutes:0, focusCycles:0, streak:0, lastActiveDate:null};
+    try{
+      const rows = await sb('stats?user_id=eq.'+encodeURIComponent(state.me.userId)+'&select=*');
+      if(rows && rows[0]){
+        const r=rows[0];
+        s = {focusMinutes:Number(r.focus_minutes)||0, focusCycles:r.focus_cycles||0,
+          streak:r.streak||0, lastActiveDate:r.last_active_date};
+      }
+    }catch(e){ console.error(e); }
     s.focusMinutes = (s.focusMinutes||0) + (delta.minutes||0);
     s.focusCycles = (s.focusCycles||0) + (delta.cycles||0);
     const today = todayStr();
@@ -512,21 +548,14 @@
       s.streak = (s.lastActiveDate===todayStr(y)) ? (s.streak||0)+1 : 1;
       s.lastActiveDate = today;
     }
-    s.name = state.me.name;
+    s.name = state.me.name; s.id = state.me.userId;
     state.myStats = s;
-    await sset(key, JSON.stringify(s), true);
     renderMyPanel();
-  }
-
-  async function mutateCards(mutator){
-    // re-fetch latest to reduce clobber, mutate, write back
-    const raw = await sget(KEY_CARDS, true);
-    let cards = [];
-    if(raw){ try{ cards = JSON.parse(raw)||[]; }catch(e){} }
-    const next = mutator(cards) || cards;
-    state.cards = next;
-    render();
-    await sset(KEY_CARDS, JSON.stringify(next), true);
+    try{
+      await sb('stats?on_conflict=user_id', {method:'POST', headers:{Prefer:'resolution=merge-duplicates'},
+        body: JSON.stringify({user_id:s.id, name:s.name, focus_minutes:s.focusMinutes,
+          focus_cycles:s.focusCycles, streak:s.streak, last_active_date:s.lastActiveDate})});
+    }catch(e){ console.error(e); }
   }
 
   /* ---------------- rendering ---------------- */
@@ -674,21 +703,29 @@
 
   /* ---------------- actions ---------------- */
   async function moveCard(id, to){
+    const card = state.cards.find(x=>x.id===id);
+    if(!card) return;
+    const from = card.status;
+    const patch = { status:to, moved_at:Date.now() };
+    if(to==='doing'){ patch.review_cycle = (from==='review'); }
+    if(to==='doing' || to==='done'){ patch.active_name = state.me?state.me.name:card.activeName; }
+    if(to==='todo'){ patch.active_name = null; }
+    if(to==='review'){ patch.active_name = null; }
     let wasReviewCompletion=false;
-    await mutateCards(cards=>{
-      const c=cards.find(x=>x.id===id); if(!c) return cards;
-      const from = c.status;
-      if(to==='doing'){ c.reviewCycle = (from==='review'); }
-      c.status=to; c.movedAt=Date.now();
-      if(to==='doing' || to==='done'){ c.activeName = state.me?state.me.name:c.activeName; }
-      if(to==='todo'){ c.activeName=null; }
-      if(to==='review'){ c.activeName=null; }
-      if(to==='done'){
-        c.completedBy = state.me ? {id:state.me.userId, name:state.me.name} : c.completedBy;
-        if(c.reviewCycle){ c.reviewsDone=(c.reviewsDone||0)+1; c.reviewCycle=false; wasReviewCompletion=true; }
+    if(to==='done'){
+      patch.completed_by_id = state.me ? state.me.userId : (card.completedBy&&card.completedBy.id)||null;
+      patch.completed_by_name = state.me ? state.me.name : (card.completedBy&&card.completedBy.name)||null;
+      if(card.reviewCycle){ patch.reviews_done=(card.reviewsDone||0)+1; patch.review_cycle=false; wasReviewCompletion=true; }
+    }
+    try{
+      const rows = await sb('cards?id=eq.'+encodeURIComponent(id), {method:'PATCH',
+        headers:{Prefer:'return=representation'}, body: JSON.stringify(patch)});
+      if(rows && rows[0]){
+        const idx = state.cards.findIndex(x=>x.id===id);
+        if(idx>=0) state.cards[idx] = rowToCard(rows[0]);
       }
-      return cards;
-    });
+    }catch(e){ console.error(e); toast('Não deu pra salvar — verifique sua conexão.'); return; }
+    render();
     if(to==='done') toast(wasReviewCompletion ? 'Revisão concluída — mandou bem! 🎯' : 'Assunto concluído — mandou bem! 🎯');
     if(to==='doing') toast('Bom estudo! Foco total. 🔥');
     if(to==='review') toast('Marcado para revisão. Volte quando quiser reforçar. 🔁');
@@ -700,7 +737,10 @@
     if(!c) return;
     if(!state.me || c.ownerId!==state.me.userId){ toast('Você só pode apagar assuntos que você criou.'); return; }
     if(!confirm(`Apagar "${c.subject}"? Isso remove o assunto para todos.`)) return;
-    await mutateCards(cards=> cards.filter(x=>x.id!==id));
+    try{ await sb('cards?id=eq.'+encodeURIComponent(id), {method:'DELETE'}); }
+    catch(e){ console.error(e); toast('Não deu pra apagar — verifique sua conexão.'); return; }
+    state.cards = state.cards.filter(x=>x.id!==id);
+    render();
     toast('Assunto removido.');
   }
 
@@ -708,26 +748,33 @@
     const card={id:uid('c'), subject, area:area||'Geral', status:'todo',
       ownerId:state.me.userId, ownerName:state.me.name, activeName:null,
       createdAt:Date.now(), movedAt:Date.now()};
-    await mutateCards(cards=>{ cards.push(card); return cards; });
+    try{
+      const rows = await sb('cards', {method:'POST', headers:{Prefer:'return=representation'},
+        body: JSON.stringify(cardToRow(card))});
+      state.cards.push(rows && rows[0] ? rowToCard(rows[0]) : card);
+    }catch(e){ console.error(e); toast('Não deu pra adicionar — verifique sua conexão.'); return; }
+    render();
     toast('Assunto adicionado à fila.');
   }
 
   /* ---------------- presence ---------------- */
   async function heartbeat(){
     if(!state.me) return;
-    await sset('presence:'+state.me.userId, JSON.stringify({name:state.me.name, at:Date.now()}), true);
+    try{
+      await sb('presence?on_conflict=user_id', {method:'POST', headers:{Prefer:'resolution=merge-duplicates'},
+        body: JSON.stringify({user_id:state.me.userId, name:state.me.name, at:Date.now()})});
+    }catch(e){ console.error(e); }
   }
   async function refreshPresence(){
-    const keys = await slist('presence:', true);
+    let rows=[];
+    try{ rows = await sb('presence?select=*'); }catch(e){ console.error(e); }
     const now=Date.now(); const live=[];
-    for(const k of keys){
-      const raw= await sget(k, true);
-      if(!raw) continue;
-      let p; try{ p=JSON.parse(raw); }catch(e){ continue; }
-      if(now - (p.at||0) < 60000) live.push({key:k, name:p.name, at:p.at});
-      else if(state.me && k==='presence:'+state.me.userId){ /* keep own */ }
-      else if(now - (p.at||0) > 15*60000){ sdel(k, true); } // tidy very stale
-    }
+    (rows||[]).forEach(p=>{
+      const at = Number(p.at)||0;
+      if(now - at < 60000) live.push({id:p.user_id, name:p.name, at});
+      else if(state.me && p.user_id===state.me.userId){ /* keep own */ }
+      else if(now - at > 15*60000){ sb('presence?user_id=eq.'+encodeURIComponent(p.user_id), {method:'DELETE'}).catch(()=>{}); }
+    });
     live.sort((a,b)=> a.name.localeCompare(b.name));
     renderPresence(live);
   }
@@ -770,7 +817,13 @@
     setInterval(heartbeat, 20000);     // keep-alive
     setInterval(renderCountdown, 3600000);
     window.addEventListener('beforeunload', ()=>{
-      if(state.me) navigator.sendBeacon && sdel('presence:'+state.me.userId, true);
+      if(!state.me) return;
+      try{
+        fetch(SB_URL+'/rest/v1/presence?user_id=eq.'+encodeURIComponent(state.me.userId), {
+          method:'DELETE', keepalive:true,
+          headers:{apikey:SB_KEY, Authorization:'Bearer '+SB_KEY}
+        });
+      }catch(e){}
     });
   }
 
@@ -782,7 +835,7 @@
       if(!v){ el('nameInput').focus(); return; }
       const userId = (state.me&&state.me.userId) || uid('u');
       state.me={userId, name:v};
-      sset('me', JSON.stringify(state.me), false);
+      localStorage.setItem('me', JSON.stringify(state.me));
       el('gate').hidden=true;
       heartbeat(); refresh();
     };
@@ -809,7 +862,9 @@
     el('saveSet').onclick=async ()=>{
       state.cfg.sala=el('setSala').value.trim()||'Sala CBM-MA';
       state.cfg.date=el('setDate').value||state.cfg.date;
-      await sset(KEY_CFG, JSON.stringify(state.cfg), true);
+      try{
+        await sb('config?id=eq.1', {method:'PATCH', body: JSON.stringify({sala:state.cfg.sala, exam_date:state.cfg.date})});
+      }catch(e){ console.error(e); toast('Não deu pra salvar os ajustes — verifique sua conexão.'); return; }
       applyConfig(); el('setModal').hidden=true; toast('Ajustes salvos para a sala.');
     };
 
@@ -827,7 +882,7 @@
     const time=el('pomoTime'), meta=el('pomoMeta'), toggle=el('pomoToggle'),
           reset=el('pomoReset'), cyc=el('pomoCyc'), pomo=el('pomo');
     // restore cycles
-    (async()=>{ const r=await sget('pomo:cycles', false); if(r){ cycles=parseInt(r)||0; cyc.textContent='×'+cycles; } })();
+    { const r=localStorage.getItem('pomo:cycles'); if(r){ cycles=parseInt(r)||0; cyc.textContent='×'+cycles; } }
 
     function paint(){
       const m=String(Math.floor(left/60)).padStart(2,'0');
@@ -841,7 +896,7 @@
     function tick(){
       left--;
       if(left<0){
-        if(mode==='focus'){ cycles++; cyc.textContent='×'+cycles; sset('pomo:cycles', String(cycles), false);
+        if(mode==='focus'){ cycles++; cyc.textContent='×'+cycles; localStorage.setItem('pomo:cycles', String(cycles));
           bumpStats({minutes:dur.focus/60, cycles:1});
           mode='break'; left=dur.break; toast('Ciclo de foco concluído. Respira 5 min. ☕'); }
         else { mode='focus'; left=dur.focus; toast('Pausa acabou. De volta ao foco! 🔥'); }
@@ -865,10 +920,6 @@
   }
 
   /* ---------------- go ---------------- */
-  if(window.storage){ init(); }
-  else {
-    document.querySelector('.wrap').insertAdjacentHTML('afterbegin',
-      '<div style="background:#2a1518;border:1px solid #d8232f;color:#ffbcc0;padding:14px;border-radius:10px;margin-bottom:16px;font-size:14px">Este painel precisa rodar dentro do Claude para salvar e compartilhar os dados da sala.</div>');
-  }
+  init();
 })();
 </script>
