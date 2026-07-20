@@ -65,8 +65,17 @@ create policy "profiles update own" on public.profiles for update to authenticat
 create policy "profiles delete own" on public.profiles for delete to authenticated using (id = auth.uid());
 -- RLS só controla linha, não coluna: sem isto, qualquer pessoa logada
 -- poderia editar a própria is_admin direto pela API e virar administrador.
-revoke update (is_admin) on public.profiles from authenticated;
-revoke insert (is_admin) on public.profiles from authenticated;
+-- O Supabase concede UPDATE/INSERT de tabela inteira pra "authenticated"
+-- por padrão, e privilégio de tabela permite alterar qualquer coluna —
+-- por isso revogamos a tabela inteira e devolvemos só o que o app precisa,
+-- coluna por coluna, sem is_admin.
+revoke update on public.profiles from authenticated;
+revoke insert on public.profiles from authenticated;
+grant insert (id, username, display_name) on public.profiles to authenticated;
+grant update (
+  display_name, streak, last_active_date, focus_minutes, focus_cycles, last_seen,
+  daily_goal_type, daily_goal_value, daily_day, daily_subjects_done, daily_minutes
+) on public.profiles to authenticated;
 
 -- Assuntos do quadro. Visíveis a todos os logados; só o dono cria/move/apaga.
 create table public.cards (
