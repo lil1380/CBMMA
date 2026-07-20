@@ -30,7 +30,7 @@
   html,body{margin:0;background:var(--bg);color:var(--ink);
     font-family:"IBM Plex Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
   body{min-height:100vh}
-  .wrap{max-width:1180px;margin:0 auto;padding:20px 18px 60px}
+  .wrap{max-width:1560px;margin:0 auto;padding:20px 18px 60px}
   .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
   button{font-family:inherit;cursor:pointer}
   button:focus-visible, input:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
@@ -86,14 +86,25 @@
   .chip-who.me{border-color:var(--green)}
   .presence .none{font-size:12.5px;color:var(--faint);font-style:italic}
 
+  /* ---------- layout principal (quadro + painéis móveis) ---------- */
+  .layout{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+  .main-col{min-width:0;container-type:inline-size}
+  .side-col{display:flex;flex-direction:column;gap:16px;min-width:0}
+  .side-panel{transition:opacity .15s}
+  .side-panel.dragging{opacity:.35}
+  .panel-handle{cursor:grab;opacity:.45;font-size:13px;line-height:1}
+  .panel-handle:active{cursor:grabbing}
+  @media (max-width:1040px){
+    .layout{grid-template-columns:1fr}
+  }
+
   /* ---------- Meu Progresso ---------- */
-  .mypanel{display:grid;grid-template-columns:1.2fr 1fr;gap:16px;margin-bottom:18px}
   .mystats{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
-  .mystats h3, .rank h3{font-family:"Oswald","Arial Narrow","Helvetica Neue",Arial,sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.06em;
-    font-size:13px;margin:0 0 12px;color:var(--muted);display:flex;align-items:center;justify-content:space-between}
+  .mystats h3, .rank h3, .stats-panel h3, .mural h3{font-family:"Oswald","Arial Narrow","Helvetica Neue",Arial,sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.06em;
+    font-size:13px;margin:0 0 12px;color:var(--muted);display:flex;align-items:center;gap:8px}
   .pts-badge{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:12px;font-weight:600;letter-spacing:0;
     text-transform:none;color:var(--amber);background:rgba(242,167,54,.15);border:1px solid rgba(242,167,54,.4);
-    border-radius:20px;padding:3px 10px}
+    border-radius:20px;padding:3px 10px;margin-left:auto}
   .mystats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
   .mystat{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:8px;padding:9px 11px}
   .mystat .k{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
@@ -118,14 +129,12 @@
 
   /* ---------- Estatísticas do edital ---------- */
   .stats-panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;margin-bottom:18px}
-  .stats-panel h3{font-family:"Oswald","Arial Narrow","Helvetica Neue",Arial,sans-serif;font-weight:600;text-transform:uppercase;
-    letter-spacing:.06em;font-size:13px;margin:0 0 12px;color:var(--muted)}
   .stats-summary{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
   .stat-chip{background:var(--panel-2);border:1px solid var(--line-soft);border-radius:8px;padding:9px 14px;
     text-align:center;flex:1;min-width:110px}
   .stat-chip .k{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)}
   .stat-chip .v{font-family:"IBM Plex Mono",ui-monospace,monospace;font-weight:600;font-size:18px;margin-top:2px}
-  .stats-body{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  .stats-body{display:grid;grid-template-columns:1fr;gap:20px}
   .stat-group h4{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin:0 0 10px}
   .stat-area{margin-bottom:9px}
   .sa-head{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px}
@@ -179,6 +188,8 @@
 
   /* ---------- Board ---------- */
   .board{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  @container (max-width:900px){ .board{grid-template-columns:repeat(2,1fr)} }
+  @container (max-width:480px){ .board{grid-template-columns:1fr} }
   .col{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
     display:flex;flex-direction:column;min-height:200px}
   .col-head{display:flex;align-items:center;gap:10px;padding:13px 15px;
@@ -204,6 +215,8 @@
     color:var(--lilac);border:1px solid rgba(164,140,224,.4);background:rgba(164,140,224,.1);
     border-radius:5px;padding:2px 7px;margin:0 0 8px 6px}
   .card.done .subj{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--line)}
+  .card-link{display:block;font-size:11.5px;color:var(--blue);margin-top:6px;text-decoration:none;word-break:break-all}
+  .card-link:hover{text-decoration:underline}
   .card .who{font-size:11.5px;color:var(--faint);margin-top:7px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
   .card .who .act{color:var(--amber)}
   .card.done .who .act{color:var(--green)}
@@ -396,13 +409,7 @@
   footer.note{margin-top:26px;text-align:center;color:var(--faint);font-size:11.5px;letter-spacing:.03em}
   footer.note b{color:var(--muted)}
 
-  @media (max-width:1040px){
-    .board{grid-template-columns:repeat(2,1fr)}
-  }
   @media (max-width:860px){
-    .board{grid-template-columns:1fr}
-    .mypanel{grid-template-columns:1fr}
-    .stats-body{grid-template-columns:1fr}
     .head-metrics{margin-left:0;width:100%}
     .metric{flex:1;min-width:0}
     .pomo{left:16px;right:16px;bottom:12px}
@@ -441,6 +448,7 @@
         <button class="gear" id="btnSettings" title="Ajustes da sala" aria-label="Ajustes da sala">⚙</button>
         <button class="gear" id="btnHistory" title="Meu histórico" aria-label="Meu histórico" hidden>📅</button>
         <button class="gear" id="btnNotes" title="Meu bloco de notas" aria-label="Meu bloco de notas" hidden>📝</button>
+        <button class="gear" id="btnLinks" title="Meus links" aria-label="Meus links" hidden>🔗</button>
         <button class="gear" id="btnAdminPanel" title="Painel Admin" aria-label="Painel Admin" hidden>🛡️</button>
         <div class="hd-user" id="hdUser" hidden>
           <button class="av" id="hdAv" title="Minha conta">—</button>
@@ -453,88 +461,92 @@
     </div>
   </header>
 
-  <!-- ===== Meu Progresso ===== -->
-  <div class="mypanel">
-    <div class="mystats">
-      <h3>Meu progresso <span class="pts-badge" id="myPontos">0 pts</span></h3>
-      <div class="mystats-grid">
-        <div class="mystat"><div class="k">Concluídos</div><div class="v" id="myDone">0</div></div>
-        <div class="mystat rev"><div class="k">Revisões</div><div class="v" id="myReviews">0</div></div>
-        <div class="mystat streak"><div class="k">Sequência</div><div class="v" id="myStreak">0d</div></div>
-        <div class="mystat"><div class="k">Foco total</div><div class="v" id="myFocus">0min</div></div>
+  <div class="layout">
+    <!-- ===== Coluna principal: os estudos ===== -->
+    <div class="main-col">
+      <!-- ===== Progresso ===== -->
+      <div class="progress-row">
+        <div class="bar"><i id="progFill"></i></div>
+        <div class="txt"><b id="progDone">0</b> de <b id="progTotal">0</b> assuntos concluídos</div>
       </div>
-      <div class="daily-goal">
-        <div class="dg-head">
-          <span>Meta do dia</span>
-          <button class="mini-edit" id="btnEditGoal" title="Editar meta">✎</button>
+
+      <!-- ===== Toolbar ===== -->
+      <div class="toolbar">
+        <button class="add-btn" id="btnAdd">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Novo assunto
+        </button>
+        <div class="filters" id="filters"></div>
+      </div>
+
+      <!-- ===== Quadro ===== -->
+      <div class="board">
+        <section class="col todo">
+          <div class="col-head"><span class="tab"></span><h2>A estudar</h2><span class="n" id="nTodo">0</span></div>
+          <div class="col-body" id="colTodo"></div>
+        </section>
+        <section class="col doing">
+          <div class="col-head"><span class="tab"></span><h2>Estudando agora</h2><span class="n" id="nDoing">0</span></div>
+          <div class="col-body" id="colDoing"></div>
+        </section>
+        <section class="col done">
+          <div class="col-head"><span class="tab"></span><h2>Concluído</h2><span class="n" id="nDone">0</span></div>
+          <div class="col-body" id="colDone"></div>
+        </section>
+        <section class="col review">
+          <div class="col-head"><span class="tab"></span><h2>Revisão</h2><span class="n" id="nReview">0</span></div>
+          <div class="col-body" id="colReview"></div>
+        </section>
+      </div>
+    </div>
+
+    <!-- ===== Coluna lateral: painéis móveis (arraste pra reorganizar) ===== -->
+    <div class="side-col" id="sideCol">
+      <div class="mystats side-panel" data-panel="mystats" draggable="true">
+        <h3><span class="panel-handle" title="Arrastar para reorganizar">⠿</span>Meu progresso<span class="pts-badge" id="myPontos">0 pts</span></h3>
+        <div class="mystats-grid">
+          <div class="mystat"><div class="k">Concluídos</div><div class="v" id="myDone">0</div></div>
+          <div class="mystat rev"><div class="k">Revisões</div><div class="v" id="myReviews">0</div></div>
+          <div class="mystat streak"><div class="k">Sequência</div><div class="v" id="myStreak">0d</div></div>
+          <div class="mystat"><div class="k">Foco total</div><div class="v" id="myFocus">0min</div></div>
         </div>
-        <div class="dg-bar"><i id="dgFill"></i></div>
-        <div class="dg-txt" id="dgTxt">—</div>
+        <div class="daily-goal">
+          <div class="dg-head">
+            <span>Meta do dia</span>
+            <button class="mini-edit" id="btnEditGoal" title="Editar meta">✎</button>
+          </div>
+          <div class="dg-bar"><i id="dgFill"></i></div>
+          <div class="dg-txt" id="dgTxt">—</div>
+        </div>
+      </div>
+
+      <div class="rank side-panel" data-panel="rank" draggable="true">
+        <h3><span class="panel-handle" title="Arrastar para reorganizar">⠿</span>Quem mais estudou</h3>
+        <div id="rankList"><span class="none">ainda sem dados…</span></div>
+      </div>
+
+      <div class="stats-panel side-panel" data-panel="stats" draggable="true">
+        <h3><span class="panel-handle" title="Arrastar para reorganizar">⠿</span>📊 Estatísticas do edital</h3>
+        <div class="stats-summary">
+          <div class="stat-chip"><div class="k">Estudado 1x+</div><div class="v" id="statDone">0/0</div></div>
+          <div class="stat-chip"><div class="k">Revisados</div><div class="v" id="statReview">0</div></div>
+          <div class="stat-chip"><div class="k">Não iniciados</div><div class="v" id="statTodo">0</div></div>
+        </div>
+        <div id="statsBody" class="stats-body"></div>
+      </div>
+
+      <div class="mural side-panel" data-panel="mural" draggable="true">
+        <h3><span class="panel-handle" title="Arrastar para reorganizar">⠿</span>📣 Mural da sala</h3>
+        <div class="bot-pin">
+          <div class="bot-av">🚒</div>
+          <div class="bot-line">
+            <div class="nm">Sgt. Fagulha <span class="tag">BOT</span></div>
+            <div class="msg" id="botMsg">Bora pra cima. Um assunto de cada vez.</div>
+          </div>
+        </div>
+        <div class="feed" id="feed"><div class="feed-empty">As conquistas da galera aparecem aqui.</div></div>
       </div>
     </div>
-    <div class="rank">
-      <h3>Quem mais estudou</h3>
-      <div id="rankList"><span class="none">ainda sem dados…</span></div>
-    </div>
-  </div>
-
-  <!-- ===== Estatísticas do edital ===== -->
-  <div class="stats-panel">
-    <h3>📊 Estatísticas do edital</h3>
-    <div class="stats-summary">
-      <div class="stat-chip"><div class="k">Estudado 1x+</div><div class="v" id="statDone">0/0</div></div>
-      <div class="stat-chip"><div class="k">Revisados</div><div class="v" id="statReview">0</div></div>
-      <div class="stat-chip"><div class="k">Não iniciados</div><div class="v" id="statTodo">0</div></div>
-    </div>
-    <div id="statsBody" class="stats-body"></div>
-  </div>
-
-  <!-- ===== Mural da sala ===== -->
-  <div class="mural">
-    <h3>📣 Mural da sala</h3>
-    <div class="bot-pin">
-      <div class="bot-av">🚒</div>
-      <div class="bot-line">
-        <div class="nm">Sgt. Fagulha <span class="tag">BOT</span></div>
-        <div class="msg" id="botMsg">Bora pra cima. Um assunto de cada vez.</div>
-      </div>
-    </div>
-    <div class="feed" id="feed"><div class="feed-empty">As conquistas da galera aparecem aqui.</div></div>
-  </div>
-
-  <!-- ===== Progresso ===== -->
-  <div class="progress-row">
-    <div class="bar"><i id="progFill"></i></div>
-    <div class="txt"><b id="progDone">0</b> de <b id="progTotal">0</b> assuntos concluídos</div>
-  </div>
-
-  <!-- ===== Toolbar ===== -->
-  <div class="toolbar">
-    <button class="add-btn" id="btnAdd">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-      Novo assunto
-    </button>
-    <div class="filters" id="filters"></div>
-  </div>
-
-  <!-- ===== Quadro ===== -->
-  <div class="board">
-    <section class="col todo">
-      <div class="col-head"><span class="tab"></span><h2>A estudar</h2><span class="n" id="nTodo">0</span></div>
-      <div class="col-body" id="colTodo"></div>
-    </section>
-    <section class="col doing">
-      <div class="col-head"><span class="tab"></span><h2>Estudando agora</h2><span class="n" id="nDoing">0</span></div>
-      <div class="col-body" id="colDoing"></div>
-    </section>
-    <section class="col done">
-      <div class="col-head"><span class="tab"></span><h2>Concluído</h2><span class="n" id="nDone">0</span></div>
-      <div class="col-body" id="colDone"></div>
-    </section>
-    <section class="col review">
-      <div class="col-head"><span class="tab"></span><h2>Revisão</h2><span class="n" id="nReview">0</span></div>
-      <div class="col-body" id="colReview"></div>
-    </section>
   </div>
 
   <footer class="note">
@@ -769,6 +781,32 @@
   </div>
 </div>
 
+<!-- Meus links -->
+<div class="veil" id="linksModal" hidden>
+  <div class="modal modal-wide">
+    <h3>Meus links</h3>
+    <p>Videoaulas, sites de questões e outros links úteis — só você vê essa lista.</p>
+
+    <div class="field">
+      <label for="linkTitleInput">Título</label>
+      <input id="linkTitleInput" maxlength="80" placeholder="ex: Videoaula — Concordância verbal" autocomplete="off" />
+    </div>
+    <div class="field">
+      <label for="linkUrlInput">Link</label>
+      <input id="linkUrlInput" type="url" maxlength="500" placeholder="ex: https://..." autocomplete="off" />
+    </div>
+    <div class="modal-actions" style="margin-bottom:16px">
+      <button class="btn-primary" id="btnAddLink" style="flex:1">Guardar link</button>
+    </div>
+
+    <div id="linksList" class="notes-list"></div>
+
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn-ghost" id="cancelLinks" style="flex:1">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Novo assunto -->
 <div class="veil" id="addModal" hidden>
   <div class="modal">
@@ -783,6 +821,10 @@
       <label for="areaInput">Matéria</label>
       <input id="areaInput" list="areaList" maxlength="40" placeholder="ex: Língua Portuguesa" autocomplete="off" />
       <datalist id="areaList"></datalist>
+    </div>
+    <div class="field">
+      <label for="linkInput">Link (opcional)</label>
+      <input id="linkInput" type="url" maxlength="500" placeholder="ex: https://..." autocomplete="off" />
     </div>
     <div class="modal-actions">
       <button class="btn-primary" id="saveAdd">Adicionar à fila</button>
@@ -866,8 +908,15 @@
     return {
       id:r.id, subject:r.subject, area:r.area, status:r.status, ownerId:r.owner_id,
       reviewsDone: r.reviews_done||0, reviewCycle: !!r.review_cycle,
-      createdAt: Number(r.created_at), movedAt: Number(r.moved_at)
+      createdAt: Number(r.created_at), movedAt: Number(r.moved_at), link: r.link||''
     };
+  }
+
+  // só aceita http(s) — evita golpes tipo javascript: em href de link colado por usuário
+  function safeUrl(u){
+    if(!u) return '';
+    const s = String(u).trim();
+    return /^https?:\/\//i.test(s) ? s : '';
   }
 
   const uid = (p)=> (p||'')+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -883,9 +932,50 @@
   let histViewDate = new Date();
   let histEvents = [];
   let myNotes = [];
+  let myLinks = [];
   const NOTE_HIDDEN_KEY = 'sala:noteWidgetHidden';
   const isNoteWidgetHidden = ()=> localStorage.getItem(NOTE_HIDDEN_KEY) === '1';
   const setNoteWidgetHidden = (v)=> localStorage.setItem(NOTE_HIDDEN_KEY, v ? '1' : '0');
+
+  /* ---------------- painéis laterais móveis (ordem salva por dispositivo) ---------------- */
+  const PANEL_ORDER_KEY = 'sala:sidePanelOrder';
+  function applySidePanelOrder(){
+    const col = el('sideCol');
+    if(!col) return;
+    let saved = [];
+    try{ saved = JSON.parse(localStorage.getItem(PANEL_ORDER_KEY) || '[]'); }catch(e){ saved = []; }
+    if(!saved.length) return;
+    saved.forEach(key=>{
+      const panel = col.querySelector(`[data-panel="${key}"]`);
+      if(panel) col.appendChild(panel);
+    });
+  }
+  function saveSidePanelOrder(){
+    const col = el('sideCol');
+    if(!col) return;
+    const order = [...col.querySelectorAll('.side-panel')].map(p=>p.getAttribute('data-panel'));
+    localStorage.setItem(PANEL_ORDER_KEY, JSON.stringify(order));
+  }
+  function initSidePanelDnD(){
+    const col = el('sideCol');
+    if(!col) return;
+    let dragEl = null;
+    col.querySelectorAll('.side-panel').forEach(panel=>{
+      panel.addEventListener('dragstart', ()=>{ dragEl = panel; panel.classList.add('dragging'); });
+      panel.addEventListener('dragend', ()=>{ dragEl = null; panel.classList.remove('dragging'); saveSidePanelOrder(); });
+    });
+    col.addEventListener('dragover', (e)=>{
+      if(!dragEl) return;
+      e.preventDefault();
+      const siblings = [...col.querySelectorAll('.side-panel:not(.dragging)')];
+      const after = siblings.reduce((closest, child)=>{
+        const box = child.getBoundingClientRect();
+        const offset = e.clientY - box.top - box.height/2;
+        return (offset < 0 && offset > closest.offset) ? {offset, element: child} : closest;
+      }, {offset: -Infinity, element: null}).element;
+      if(after==null) col.appendChild(dragEl); else col.insertBefore(dragEl, after);
+    });
+  }
 
   /* ---------------- criptografia leve no navegador ---------------- */
   async function sha256Hex(text){
@@ -1049,7 +1139,7 @@
     if(!missing.length) return;
     const rows = missing.map(c=>({
       user_id: state.me.id, card_id: c.id, subject: c.subject, area: c.area,
-      event_type: 'estudado', at: c.movedAt || c.createdAt || Date.now()
+      event_type: c.reviewsDone>0 ? 'revisado' : 'estudado', at: c.movedAt || c.createdAt || Date.now()
     }));
     const {error} = await supa.from('study_events').insert(rows);
     if(error){ console.error(error); return; }
@@ -1189,6 +1279,55 @@
     const {error} = await supa.from('personal_notes').delete().eq('id', id);
     if(error){ console.error(error); toast('Não deu pra apagar.'); return; }
     await loadMyNotes();
+  }
+
+  /* ---------------- meus links (privado) ---------------- */
+  async function openLinks(){
+    el('linkTitleInput').value = ''; el('linkUrlInput').value = '';
+    el('linksModal').hidden = false;
+    await loadMyLinks();
+  }
+  async function loadMyLinks(){
+    if(!state.me) return;
+    const {data, error} = await supa.from('personal_links').select('*')
+      .eq('user_id', state.me.id).order('created_at', {ascending:false});
+    if(error){ console.error(error); return; }
+    myLinks = data || [];
+    renderLinksList();
+  }
+  function renderLinksList(){
+    const wrap = el('linksList');
+    if(!wrap) return;
+    if(!myLinks.length){ wrap.innerHTML = '<span class="hint">nenhum link ainda. Guarde a videoaula ou o site de questões que você mais usa.</span>'; return; }
+    wrap.innerHTML = myLinks.map(l=>`
+      <div class="note-card">
+        <div class="nc-text"><a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.title)}</a></div>
+        <div class="nc-meta">
+          <span class="nc-date">${fmtNoteDate(l.created_at)}</span>
+          <button class="nc-del" data-dellink="${l.id}" title="Apagar link">Apagar</button>
+        </div>
+      </div>`).join('');
+    wrap.querySelectorAll('[data-dellink]').forEach(b=>{
+      b.onclick = ()=> deleteLink(b.getAttribute('data-dellink'));
+    });
+  }
+  async function addLink(){
+    const title = el('linkTitleInput').value.trim();
+    const url = safeUrl(el('linkUrlInput').value.trim());
+    if(!title){ el('linkTitleInput').focus(); return; }
+    if(!url){ toast('Link precisa começar com http:// ou https://'); el('linkUrlInput').focus(); return; }
+    el('btnAddLink').disabled = true;
+    const {error} = await supa.from('personal_links').insert({user_id: state.me.id, title, url, created_at: Date.now()});
+    el('btnAddLink').disabled = false;
+    if(error){ console.error(error); toast('Não deu pra guardar o link.'); return; }
+    el('linkTitleInput').value = ''; el('linkUrlInput').value = '';
+    await loadMyLinks();
+  }
+  async function deleteLink(id){
+    if(!confirm('Apagar esse link?')) return;
+    const {error} = await supa.from('personal_links').delete().eq('id', id);
+    if(error){ console.error(error); toast('Não deu pra apagar.'); return; }
+    await loadMyLinks();
   }
 
   async function importarEdital(){
@@ -1352,6 +1491,7 @@
     stopLoops();
     state.me=null; state.myProfile=null; state.cards=[]; state.profiles=[];
     myNotes = [];
+    myLinks = [];
     el('noteWidget').hidden = true;
     el('hdUser').hidden = true;
     el('authVeil').hidden = false;
@@ -1371,6 +1511,7 @@
     el('btnAdminPanel').hidden = !state.myProfile.is_admin;
     el('btnHistory').hidden = false;
     el('btnNotes').hidden = false;
+    el('btnLinks').hidden = false;
   }
 
   async function boot(){
@@ -1509,12 +1650,15 @@
 
     const byStatus = {todo:[],doing:[],done:[],review:[]};
     shown.forEach(c=> (byStatus[c.status]||byStatus.todo).push(c));
+    // "a estudar" é a fila pessoal — só o dono vê a sua. Os demais status
+    // (estudando agora, concluído, revisão) continuam expostos a todos.
+    byStatus.todo = byStatus.todo.filter(c=> state.me && c.ownerId===state.me.id);
     byStatus.todo.sort((a,b)=>a.createdAt-b.createdAt);
     byStatus.doing.sort((a,b)=>b.movedAt-a.movedAt);
     byStatus.done.sort((a,b)=>b.movedAt-a.movedAt);
     byStatus.review.sort((a,b)=>a.movedAt-b.movedAt);
 
-    el('colTodo').innerHTML   = byStatus.todo.length   ? byStatus.todo.map(cardHTML).join('')   : emptyHTML('Fila vazia. Adicione o próximo assunto.');
+    el('colTodo').innerHTML   = byStatus.todo.length   ? byStatus.todo.map(cardHTML).join('')   : emptyHTML('Sua fila está vazia. Adicione o próximo assunto.');
     el('colDoing').innerHTML  = byStatus.doing.length  ? byStatus.doing.map(cardHTML).join('')  : emptyHTML('Ninguém estudando agora. Pegue um assunto da fila.');
     el('colDone').innerHTML   = byStatus.done.length   ? byStatus.done.map(cardHTML).join('')   : emptyHTML('Nada concluído ainda. Bora começar?');
     el('colReview').innerHTML = byStatus.review.length ? byStatus.review.map(cardHTML).join('') : emptyHTML('Nada aguardando revisão.');
@@ -1707,13 +1851,16 @@
       }else{
         actions += `<button class="act-btn" data-move="review" data-id="${c.id}">Marcar p/ revisão</button>`;
       }
+      actions += `<button class="act-btn linkedit" data-linkedit="${c.id}" title="Colar link (videoaula, questões...)">${c.link?'✏️ link':'🔗 add link'}</button>`;
       actions += `<button class="act-btn del" data-del="${c.id}" title="Apagar">Apagar</button>`;
     }
 
     const badge = c.reviewsDone ? `<span class="revbadge">🔁 ${c.reviewsDone}x</span>` : '';
+    const link = safeUrl(c.link);
     return `<div class="card ${c.status}">
       ${c.area?`<span class="area">${esc(c.area)}</span>`:''}${badge}
       <div class="subj">${esc(c.subject)}</div>
+      ${link?`<a class="card-link" href="${esc(link)}" target="_blank" rel="noopener noreferrer">🔗 ${esc(link.replace(/^https?:\/\//i,'').slice(0,40))}</a>`:''}
       <div class="who">${who}</div>
       ${actions?`<div class="card-actions">${actions}</div>`:''}
     </div>`;
@@ -1726,6 +1873,9 @@
     });
     document.querySelectorAll('[data-del]').forEach(b=>{
       b.onclick = ()=> deleteCard(b.getAttribute('data-del'));
+    });
+    document.querySelectorAll('[data-linkedit]').forEach(b=>{
+      b.onclick = ()=> editCardLink(b.getAttribute('data-linkedit'));
     });
   }
 
@@ -1778,6 +1928,19 @@
     if(error) console.error(error);
   }
 
+  async function editCardLink(id){
+    const c = state.cards.find(x=>x.id===id);
+    if(!c || c.ownerId!==state.me.id) return;
+    const input = prompt('Link da videoaula, lista de questões etc. (deixe vazio para remover):', c.link||'');
+    if(input===null) return;
+    const trimmed = input.trim();
+    if(trimmed && !safeUrl(trimmed)){ toast('Link precisa começar com http:// ou https://'); return; }
+    const {error} = await supa.from('cards').update({link: trimmed}).eq('id', id);
+    if(error){ console.error(error); toast('Não deu pra salvar o link — verifique sua conexão.'); return; }
+    c.link = trimmed;
+    render();
+  }
+
   async function deleteCard(id){
     const c=state.cards.find(x=>x.id===id);
     if(!c || c.ownerId!==state.me.id) return;
@@ -1789,9 +1952,10 @@
     toast('Assunto removido.');
   }
 
-  async function addCard(subject, area){
+  async function addCard(subject, area, link){
+    const cleanLink = safeUrl(link);
     const row = { id:uid('c'), subject, area:area||'Geral', status:'todo', owner_id:state.me.id,
-      reviews_done:0, review_cycle:false, created_at:Date.now(), moved_at:Date.now() };
+      reviews_done:0, review_cycle:false, created_at:Date.now(), moved_at:Date.now(), link: cleanLink };
     const {data, error} = await supa.from('cards').insert(row).select().single();
     if(error){ console.error(error); toast('Não deu pra adicionar — verifique sua conexão.'); return; }
     state.cards.push(rowToCard(data));
@@ -1854,15 +2018,20 @@
 
   /* ---------------- UI wiring ---------------- */
   function wireUI(){
+    applySidePanelOrder();
+    initSidePanelDnD();
+
     // add
     el('btnAdd').onclick=()=>{
-      el('addModal').hidden=false; el('subjInput').value=''; el('areaInput').value='';
+      el('addModal').hidden=false; el('subjInput').value=''; el('areaInput').value=''; el('linkInput').value='';
       refreshSubjList(''); el('subjInput').focus();
     };
     el('cancelAdd').onclick=()=> el('addModal').hidden=true;
     el('saveAdd').onclick=()=>{
       const s=el('subjInput').value.trim(); if(!s){ el('subjInput').focus(); return; }
-      addCard(s, el('areaInput').value.trim());
+      const linkVal = el('linkInput').value.trim();
+      if(linkVal && !safeUrl(linkVal)){ toast('Link precisa começar com http:// ou https://'); el('linkInput').focus(); return; }
+      addCard(s, el('areaInput').value.trim(), linkVal);
       el('addModal').hidden=true;
     };
     el('subjInput').addEventListener('keydown',e=>{ if(e.key==='Enter') el('areaInput').focus(); });
@@ -1946,6 +2115,11 @@
     el('cancelNotes').onclick=()=> el('notesModal').hidden=true;
     el('btnAddNote').onclick=()=> addNote();
     el('noteWidgetClose').onclick=()=>{ setNoteWidgetHidden(true); el('noteWidget').hidden=true; };
+
+    // meus links
+    el('btnLinks').onclick=()=> openLinks();
+    el('cancelLinks').onclick=()=> el('linksModal').hidden=true;
+    el('btnAddLink').onclick=()=> addLink();
 
     el('btnAdminPanel').onclick=()=>{
       el('adminUser').value=''; el('adminCodeResult').textContent='';

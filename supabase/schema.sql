@@ -27,6 +27,7 @@ drop function if exists public.admin_delete_user(text);
 drop function if exists public.reset_password_with_code(text, text, text);
 drop function if exists public.reset_password_with_admin_code(text, text, text);
 drop function if exists public.admin_generate_reset_code(text);
+drop table if exists public.personal_links;
 drop table if exists public.personal_notes;
 drop table if exists public.study_events;
 drop table if exists public.pomodoro_sessions;
@@ -77,7 +78,8 @@ create table public.cards (
   reviews_done int not null default 0,
   review_cycle boolean not null default false,
   created_at bigint not null,
-  moved_at bigint not null
+  moved_at bigint not null,
+  link text
 );
 alter table public.cards enable row level security;
 create policy "cards select all logados" on public.cards for select to authenticated using (true);
@@ -140,6 +142,19 @@ alter table public.personal_notes enable row level security;
 create policy "personal_notes select own" on public.personal_notes for select to authenticated using (user_id = auth.uid());
 create policy "personal_notes insert own" on public.personal_notes for insert to authenticated with check (user_id = auth.uid());
 create policy "personal_notes delete own" on public.personal_notes for delete to authenticated using (user_id = auth.uid());
+
+-- Lista de links pessoais (videoaulas, sites de questões etc.) — só o dono vê.
+create table public.personal_links (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text not null,
+  url text not null,
+  created_at bigint not null
+);
+alter table public.personal_links enable row level security;
+create policy "personal_links select own" on public.personal_links for select to authenticated using (user_id = auth.uid());
+create policy "personal_links insert own" on public.personal_links for insert to authenticated with check (user_id = auth.uid());
+create policy "personal_links delete own" on public.personal_links for delete to authenticated using (user_id = auth.uid());
 
 -- ===== Recuperação de senha sem e-mail =====
 
