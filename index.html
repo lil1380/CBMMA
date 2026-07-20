@@ -204,6 +204,10 @@
   .col.done   .tab{background:var(--green)}
   .col.review .tab{background:var(--lilac)}
   .col-body{padding:12px;display:flex;flex-direction:column;gap:10px;flex:1}
+  .archived-toggle{margin:0 12px 12px;padding:8px 10px;background:var(--panel-2);border:1px solid var(--line-soft);
+    border-radius:8px;color:var(--faint);font-size:12px;text-align:left;display:flex;align-items:center;gap:6px}
+  .archived-toggle:hover{color:var(--ink);border-color:var(--faint)}
+  .archived-list{padding:0 12px 12px;display:flex;flex-direction:column;gap:10px}
 
   .card{background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:11px 12px;
     box-shadow:0 1px 0 rgba(0,0,0,.2)}
@@ -492,6 +496,8 @@
         <section class="col done">
           <div class="col-head"><span class="tab"></span><h2>Concluído</h2><span class="n" id="nDone">0</span></div>
           <div class="col-body" id="colDone"></div>
+          <button class="archived-toggle" id="archivedToggleBtn" hidden>📦 Arquivados <span id="archivedCount">0</span></button>
+          <div class="archived-list" id="archivedList" hidden></div>
         </section>
         <section class="col review">
           <div class="col-head"><span class="tab"></span><h2>Revisão</h2><span class="n" id="nReview">0</span></div>
@@ -663,6 +669,14 @@
     <div class="modal-actions">
       <button class="btn-primary" id="accSaveName">Salvar nome</button>
       <button class="btn-ghost" id="btnLogout">Sair</button>
+    </div>
+
+    <div class="field">
+      <label for="accIcon">Ícone (qualquer emoji, opcional)</label>
+      <input id="accIcon" maxlength="8" autocomplete="off" placeholder="ex: 🔥" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="accSaveIcon" style="width:100%">Salvar ícone</button>
     </div>
 
     <div class="field">
@@ -908,7 +922,8 @@
     return {
       id:r.id, subject:r.subject, area:r.area, status:r.status, ownerId:r.owner_id,
       reviewsDone: r.reviews_done||0, reviewCycle: !!r.review_cycle,
-      createdAt: Number(r.created_at), movedAt: Number(r.moved_at), link: r.link||''
+      createdAt: Number(r.created_at), movedAt: Number(r.moved_at), link: r.link||'',
+      archived: !!r.archived
     };
   }
 
@@ -1506,7 +1521,7 @@
     if(!state.me || !state.myProfile) return;
     el('hdUser').hidden = false;
     const nm = state.myProfile.display_name || state.myProfile.username;
-    el('hdAv').textContent = initials(nm);
+    el('hdAv').textContent = state.myProfile.avatar_emoji || initials(nm);
     el('hdAv').style.background = avColor(nm);
     el('btnAdminPanel').hidden = !state.myProfile.is_admin;
     el('btnHistory').hidden = false;
@@ -1641,6 +1656,22 @@
     const hue=h%360; return `hsl(${hue} 62% 62%)`; };
   const initials = (n)=> (n||'?').trim().slice(0,2).toUpperCase();
   const nameHtml = (n)=> `<span style="color:${avColor(n)}">${esc(n)}</span>`;
+  function avatarEmoji(ownerId){
+    if(state.me && ownerId===state.me.id) return (state.myProfile && state.myProfile.avatar_emoji) || '';
+    const p = state.profiles.find(x=>x.id===ownerId);
+    return (p && p.avatar_emoji) || '';
+  }
+  const avatarSpan = (ownerId, name, cls)=>{
+    const emoji = avatarEmoji(ownerId);
+    return `<span class="${cls||'av'}" style="background:${avColor(name)}">${emoji ? esc(emoji) : esc(initials(name))}</span>`;
+  };
+  function isSingleEmoji(s){
+    if(!s) return false;
+    if(typeof Intl!=='undefined' && Intl.Segmenter){
+      return [...new Intl.Segmenter().segment(s)].length === 1;
+    }
+    return [...s].length <= 4;
+  }
 
   function render(){
     const cards = state.cards;
@@ -1657,15 +1688,24 @@
     byStatus.doing.sort((a,b)=>b.movedAt-a.movedAt);
     byStatus.done.sort((a,b)=>b.movedAt-a.movedAt);
     byStatus.review.sort((a,b)=>a.movedAt-b.movedAt);
+    // arquivados saem da coluna "Concluído" (evita poluição visual), mas
+    // continuam contando pra pontos, meta e estatísticas normalmente
+    const doneVisible = byStatus.done.filter(c=>!c.archived);
+    const doneArchived = byStatus.done.filter(c=>c.archived);
 
     el('colTodo').innerHTML   = byStatus.todo.length   ? byStatus.todo.map(cardHTML).join('')   : emptyHTML('Sua fila está vazia. Adicione o próximo assunto.');
     el('colDoing').innerHTML  = byStatus.doing.length  ? byStatus.doing.map(cardHTML).join('')  : emptyHTML('Ninguém estudando agora. Pegue um assunto da fila.');
-    el('colDone').innerHTML   = byStatus.done.length   ? byStatus.done.map(cardHTML).join('')   : emptyHTML('Nada concluído ainda. Bora começar?');
+    el('colDone').innerHTML   = doneVisible.length     ? doneVisible.map(cardHTML).join('')     : emptyHTML('Nada concluído ainda. Bora começar?');
     el('colReview').innerHTML = byStatus.review.length ? byStatus.review.map(cardHTML).join('') : emptyHTML('Nada aguardando revisão.');
+
+    el('archivedToggleBtn').hidden = doneArchived.length===0;
+    el('archivedCount').textContent = doneArchived.length;
+    el('archivedList').innerHTML = doneArchived.map(cardHTML).join('');
+    if(!doneArchived.length) el('archivedList').hidden = true;
 
     el('nTodo').textContent  = byStatus.todo.length;
     el('nDoing').textContent = byStatus.doing.length;
-    el('nDone').textContent  = byStatus.done.length;
+    el('nDone').textContent  = doneVisible.length;
     el('nReview').textContent= byStatus.review.length;
 
     // metrics + progress (over full board, not filtered)
@@ -1734,7 +1774,7 @@
     wrap.innerHTML = done.map(c=>{
       const owner = profileName(c.ownerId);
       return `<div class="fi">
-        <span class="av" style="background:${avColor(owner)}">${esc(initials(owner))}</span>
+        ${avatarSpan(c.ownerId, owner)}
         <div><div class="tx"><b style="color:${avColor(owner)}">${esc(owner)}</b> concluiu <span class="subj">${esc(c.subject)}</span>${c.reviewsDone?' <span class="tm">(revisado '+c.reviewsDone+'x)</span>':''}</div>
         <div class="tm">${fmtWhen(c.movedAt)}</div></div>
       </div>`;
@@ -1848,8 +1888,11 @@
         actions += `<button class="act-btn" data-move="todo" data-id="${c.id}">Devolver</button>`;
       }else if(c.status==='review'){
         actions += `<button class="act-btn pick" data-move="doing" data-id="${c.id}">Revisar agora</button>`;
+      }else if(c.archived){
+        actions += `<button class="act-btn" data-unarchive="${c.id}" title="Tirar do arquivo">↩️ Desarquivar</button>`;
       }else{
         actions += `<button class="act-btn" data-move="review" data-id="${c.id}">Marcar p/ revisão</button>`;
+        actions += `<button class="act-btn" data-archive="${c.id}" title="Arquivar (some da coluna Concluído)">📦 Arquivar</button>`;
       }
       actions += `<button class="act-btn linkedit" data-linkedit="${c.id}" title="Colar link (videoaula, questões...)">${c.link?'✏️ link':'🔗 add link'}</button>`;
       actions += `<button class="act-btn del" data-del="${c.id}" title="Apagar">Apagar</button>`;
@@ -1876,6 +1919,12 @@
     });
     document.querySelectorAll('[data-linkedit]').forEach(b=>{
       b.onclick = ()=> editCardLink(b.getAttribute('data-linkedit'));
+    });
+    document.querySelectorAll('[data-archive]').forEach(b=>{
+      b.onclick = ()=> setArchived(b.getAttribute('data-archive'), true);
+    });
+    document.querySelectorAll('[data-unarchive]').forEach(b=>{
+      b.onclick = ()=> setArchived(b.getAttribute('data-unarchive'), false);
     });
   }
 
@@ -1941,6 +1990,16 @@
     render();
   }
 
+  async function setArchived(id, val){
+    const c = state.cards.find(x=>x.id===id);
+    if(!c || c.ownerId!==state.me.id) return;
+    const {error} = await supa.from('cards').update({archived: val}).eq('id', id);
+    if(error){ console.error(error); toast('Não deu pra salvar — verifique sua conexão.'); return; }
+    c.archived = val;
+    render();
+    toast(val ? 'Assunto arquivado.' : 'Assunto desarquivado.');
+  }
+
   async function deleteCard(id){
     const c=state.cards.find(x=>x.id===id);
     if(!c || c.ownerId!==state.me.id) return;
@@ -1948,6 +2007,13 @@
     const {error} = await supa.from('cards').delete().eq('id', id);
     if(error){ console.error(error); toast('Não deu pra apagar — verifique sua conexão.'); return; }
     state.cards = state.cards.filter(x=>x.id!==id);
+    // se o assunto tinha sido concluído hoje, tira também da meta do dia —
+    // senão os pontos de bônus por meta continuavam contando mesmo apagado
+    if(c.status==='done' && state.myProfile && todayStr(new Date(c.movedAt))===todayStr()){
+      const newDone = Math.max(0, (state.myProfile.daily_subjects_done||0) - 1);
+      const {data, error:err2} = await supa.from('profiles').update({daily_subjects_done:newDone}).eq('id', state.me.id).select().single();
+      if(!err2) state.myProfile = data; else console.error(err2);
+    }
     render();
     toast('Assunto removido.');
   }
@@ -1980,7 +2046,7 @@
       html += live.map(p=>{
         const me = state.me && p.id===state.me.id;
         return `<span class="chip-who ${me?'me':''}">
-          <span class="av" style="background:${avColor(p.display_name)}">${esc(initials(p.display_name))}</span>${nameHtml(p.display_name)}</span>`;
+          ${avatarSpan(p.id, p.display_name)}${nameHtml(p.display_name)}</span>`;
       }).join('');
     }
     wrap.innerHTML=html;
@@ -2085,6 +2151,7 @@
     el('hdAv').onclick=()=>{
       el('accUser').textContent = '@'+(state.myProfile && state.myProfile.username);
       el('accName').value = (state.myProfile && state.myProfile.display_name) || '';
+      el('accIcon').value = (state.myProfile && state.myProfile.avatar_emoji) || '';
       renderPomodoroSessions();
       el('accModal').hidden=false;
     };
@@ -2100,6 +2167,14 @@
       if(error){ console.error(error); toast('Não deu pra salvar o nome.'); return; }
       state.myProfile = data; renderHeaderUser(); render();
       toast('Nome atualizado.');
+    };
+    el('accSaveIcon').onclick=async ()=>{
+      const raw = el('accIcon').value.trim();
+      if(raw && !isSingleEmoji(raw)){ toast('Use só um emoji.'); return; }
+      const {data, error} = await supa.from('profiles').update({avatar_emoji: raw || null}).eq('id', state.me.id).select().single();
+      if(error){ console.error(error); toast('Não deu pra salvar o ícone.'); return; }
+      state.myProfile = data; renderHeaderUser(); render();
+      toast(raw ? 'Ícone atualizado.' : 'Ícone removido.');
     };
 
     // painel admin
@@ -2120,6 +2195,9 @@
     el('btnLinks').onclick=()=> openLinks();
     el('cancelLinks').onclick=()=> el('linksModal').hidden=true;
     el('btnAddLink').onclick=()=> addLink();
+
+    // assuntos arquivados
+    el('archivedToggleBtn').onclick=()=>{ el('archivedList').hidden = !el('archivedList').hidden; };
 
     el('btnAdminPanel').onclick=()=>{
       el('adminUser').value=''; el('adminCodeResult').textContent='';

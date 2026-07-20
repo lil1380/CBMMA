@@ -27,4 +27,15 @@ select '008 - coluna cards.link',
   exists(select 1 from information_schema.columns where table_schema='public' and table_name='cards' and column_name='link')
 union all
 select '008 - tabela personal_links',
-  exists(select 1 from information_schema.tables where table_schema='public' and table_name='personal_links');
+  exists(select 1 from information_schema.tables where table_schema='public' and table_name='personal_links')
+union all
+select '009 - is_admin sem privilégio de tabela',
+  not has_column_privilege('authenticated', 'public.profiles', 'is_admin', 'UPDATE')
+  and not has_column_privilege('authenticated', 'public.profiles', 'is_admin', 'INSERT')
+union all
+select '010 - coluna cards.archived',
+  exists(select 1 from information_schema.columns where table_schema='public' and table_name='cards' and column_name='archived')
+union all
+select '010 - coluna profiles.avatar_emoji (com grant de update)',
+  exists(select 1 from information_schema.columns where table_schema='public' and table_name='profiles' and column_name='avatar_emoji')
+  and has_column_privilege('authenticated', 'public.profiles', 'avatar_emoji', 'UPDATE');

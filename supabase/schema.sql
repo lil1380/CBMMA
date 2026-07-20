@@ -56,7 +56,8 @@ create table public.profiles (
   daily_goal_value numeric not null default 3,
   daily_day date,
   daily_subjects_done int not null default 0,
-  daily_minutes numeric not null default 0
+  daily_minutes numeric not null default 0,
+  avatar_emoji text
 );
 alter table public.profiles enable row level security;
 create policy "profiles select all logados" on public.profiles for select to authenticated using (true);
@@ -74,7 +75,8 @@ revoke insert on public.profiles from authenticated;
 grant insert (id, username, display_name) on public.profiles to authenticated;
 grant update (
   display_name, streak, last_active_date, focus_minutes, focus_cycles, last_seen,
-  daily_goal_type, daily_goal_value, daily_day, daily_subjects_done, daily_minutes
+  daily_goal_type, daily_goal_value, daily_day, daily_subjects_done, daily_minutes,
+  avatar_emoji
 ) on public.profiles to authenticated;
 
 -- Assuntos do quadro. Visíveis a todos os logados; só o dono cria/move/apaga.
@@ -88,7 +90,8 @@ create table public.cards (
   review_cycle boolean not null default false,
   created_at bigint not null,
   moved_at bigint not null,
-  link text
+  link text,
+  archived boolean not null default false
 );
 alter table public.cards enable row level security;
 create policy "cards select all logados" on public.cards for select to authenticated using (true);
